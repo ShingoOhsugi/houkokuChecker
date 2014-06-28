@@ -1,58 +1,118 @@
-﻿<Window x:Class="TimeCheck.MainWindow"
+﻿<metro:Window x:Class="TimeCheck.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="報告書と申請書をfileフォルダに入れて下さい" Loaded="Window_Loaded_1" WindowStartupLocation="CenterScreen" SizeToContent="Height">
+        xmlns:metro="http://schemas.codeplex.com/elysium"
+        xmlns:params="http://schemas.codeplex.com/elysium/params"
+        Title=" 報告書と申請書をfileフォルダに入れて下さい" Loaded="Window_Loaded_1" WindowStartupLocation="CenterScreen" SizeToContent="Height">
+    <Window.Resources>
+        <ResourceDictionary>
+            <!--
+            <SolidColorBrush x:Key ="TransparentBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="SemitransparentBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="BackgroundBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="ForegroundBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="HighlightBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="MiddleLightBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="LowlightBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="DisabledBrush" Color="Aqua" />
+            -->
 
+            <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Label}}">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource ContrastBrush}" />
+                <Setter Property="Margin" Value="0,1,0,1"/>
+            </Style>
+
+            <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
+                <Setter Property="Margin" Value="0,1,0,1"/>
+            </Style>
+
+            <Style TargetType="{x:Type DatePicker}" BasedOn="{StaticResource {x:Type DatePicker}}">
+                <Setter Property="BorderThickness" Value="{Binding RelativeSource={RelativeSource Self}, Path=(params:General.SemiBoldThickness), Mode=OneWay}"/>
+                <Setter Property="BorderBrush" Value="Gray" />
+                <Setter Property="Foreground" Value="{DynamicResource ContrastBrush}" />
+                <Setter Property="Margin" Value="0,1,0,1"/>
+            </Style>
+
+            <Style TargetType="{x:Type ListBox}" BasedOn="{StaticResource {x:Type ListBox}}">
+                <!--<Setter Property="BorderThickness" Value="1.5"/>-->
+                <Setter Property="BorderThickness" Value="{Binding RelativeSource={RelativeSource Self}, Path=(params:General.SemiBoldThickness), Mode=OneWay}"/>
+                <Setter Property="Margin" Value="0,1,0,1"/>
+            </Style>
+
+            <Style TargetType="{x:Type DataGrid}" BasedOn="{StaticResource {x:Type DataGrid}}">
+                <!--<Setter Property="BorderThickness" Value="1.5"/>-->
+                <Setter Property="BorderThickness" Value="{Binding RelativeSource={RelativeSource Self}, Path=(params:General.SemiBoldThickness), Mode=OneWay}"/>
+                <Setter Property="BorderBrush" Value="Gray" />
+                <Setter Property="Margin" Value="0,1,0,1"/>
+            </Style>
+
+            <!--<Style TargetType="{x:Type Calendar}" BasedOn="{StaticResource {x:Type Calendar}}">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource ContrastBrush}" />
+                <Setter Property="BorderThickness" Value="{Binding RelativeSource={RelativeSource Self}, Path=(params:General.SemiBoldThickness), Mode=OneWay}"/>
+                <Setter Property="BorderBrush" Value="Gray" />
+                <Setter Property="Margin" Value="0,1,0,1"/>
+            </Style>-->
+
+            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Margin" Value="0,3,0,3"/>
+            </Style>
+
+        </ResourceDictionary>
+    </Window.Resources>
     <Viewbox>
-        <Grid>
-            <ListBox x:Name="lbMember" HorizontalAlignment="Left" Height="192" Margin="10,35,0,0" VerticalAlignment="Top" Width="154" SelectionMode="Multiple"/>
-            <Button x:Name="btnTorikomi" Content="更新" HorizontalAlignment="Left" Margin="10,11,0,0" VerticalAlignment="Top" Width="39" Click="btnTorikomi_Click"/>
-            <Button x:Name="btnAll" Content="ALL" HorizontalAlignment="Left" Margin="125,11,0,0" VerticalAlignment="Top" Width="39" Click="btnAll_Click" RenderTransformOrigin="3.359,-10.632" />
-            <TabControl x:Name="tabMain" HorizontalAlignment="Left" Height="500" Margin="169,35,10,10" VerticalAlignment="Top" Width="613">
+        <StackPanel Orientation="Horizontal" Margin="5">
+            <StackPanel>
+                <Grid Margin="0,0,0,5">
+                    <Button x:Name="btnTorikomi" Content="更新" Click="btnTorikomi_Click" HorizontalAlignment="Left" />
+                    <Button x:Name="btnAll" Content="ALL" Click="btnAll_Click" HorizontalAlignment="Right" />
+                </Grid>
+                <ListBox x:Name="lbMember" SelectionMode="Multiple" Width="200" Height="400" />
+            </StackPanel>
+
+            <TabControl x:Name="tabMain" Height="550" Width="700" Margin="5,0,0,0">
                 <TabItem x:Name="tiCheck" Header="チェック">
-                    <Grid>
-                        <StackPanel Margin="5,5,5,0" >
-                            <StackPanel Orientation="Horizontal" >
-                                <Label Content="対象" Background="Black" Foreground="White"/>
-                                <Calendar x:Name="calCheckTaisyo" />
-                            </StackPanel>
-                            <Button x:Name="btnCheck" Content="チェック" Width="75" Click="btnCheck_Click" Margin="0,5,0,0" />
-                            <TextBox x:Name="txtCheckResult" TextWrapping="Wrap" Height="291" VerticalScrollBarVisibility="Visible" Margin="0,5,0,0" />
+                    <StackPanel Margin="5">
+                        <StackPanel Orientation="Horizontal" >
+                            <Label Content="対 象 日"/>
+                            <Calendar x:Name="calCheckTaisyo" />
                         </StackPanel>
-                    </Grid>
+                        <Button x:Name="btnCheck" Content="チェック" Click="btnCheck_Click" Width="75"/>
+                        <TextBox x:Name="txtCheckResult" TextWrapping="Wrap" Height="270" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" IsReadOnly="true"/>
+                    </StackPanel>
                 </TabItem>
                 <TabItem x:Name="tiSyukei" Header="集計">
-                    <Grid>
-                        <StackPanel Margin="5,5,5,0">
-                            <StackPanel Orientation="Horizontal" >
-                                <Label Content="対象" Background="Black" Foreground="White" BorderBrush="SkyBlue" BorderThickness="1"/>
-                                <Calendar x:Name="calSyukeiTaisyo" />
-                            </StackPanel>
-                            <Button x:Name="btnSyukei" Content="集計" Width="75" Click="btnSyukei_Click" Margin="0,5,0,0" />
-                            <DataGrid x:Name="dgSyukeiResult" Margin="0,5,0,0" Height="291" />
+                    <StackPanel Margin="5">
+                        <StackPanel Orientation="Horizontal" >
+                            <Label Content="対 象 日"/>
+                            <Calendar x:Name="calSyukeiTaisyo">
+                            </Calendar>
                         </StackPanel>
-                    </Grid>
+                        <Button x:Name="btnSyukei" Content="集計" Width="75" Click="btnSyukei_Click"/>
+                        <DataGrid x:Name="dgSyukeiResult" Height="270" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True"/>
+                    </StackPanel>
                 </TabItem>
                 <TabItem x:Name="tiDaida" Header="代打">
-                    <Grid>
-                        <StackPanel Margin="5,5,5,0">
-                            <StackPanel Orientation="Horizontal" >
-                                <Label Content="氏名" Background="Black" Foreground="White" BorderBrush="SkyBlue" BorderThickness="1" Width="120"/>
-                                <TextBox x:Name="txtName" Width="125" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" >
-                                <Label Content="年月" Background="Black" Foreground="White" BorderBrush="SkyBlue" BorderThickness="1"  Width="120"/>
-                                <Calendar x:Name="calNengetu" DisplayMode="Year"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" >
-                                <Label Content="プロジェクトコード(主)" Background="Black" Foreground="White" BorderBrush="SkyBlue" BorderThickness="1" Width="120"/>
-                                <TextBox x:Name="txtPrjCode" Width="125" />
-                            </StackPanel>
-                            <Button x:Name="btnDaida" Content="代打" Width="75" Click="btnDaida_Click" Margin="0,5,0,0" />
+                    <StackPanel Margin="5">
+                        <StackPanel Orientation="Horizontal" >
+                            <Label Content="氏 名" Width="120" />
+                            <TextBox x:Name="txtName" Width="125" />
                         </StackPanel>
-                    </Grid>
+                        <StackPanel Orientation="Horizontal" >
+                            <Label Content="年 月" Width="120"/>
+                            <DatePicker x:Name="calNengetu" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" >
+                            <Label Content="プロジェクトコード(主)" Width="120"/>
+                            <TextBox x:Name="txtPrjCode" Width="125" />
+                        </StackPanel>
+                        <Button x:Name="btnDaida" Content="代打" Width="75" Click="btnDaida_Click" />
+                    </StackPanel>
                 </TabItem>
             </TabControl>
-        </Grid>
+
+        </StackPanel>
+
     </Viewbox>
-</Window>
+</metro:Window>

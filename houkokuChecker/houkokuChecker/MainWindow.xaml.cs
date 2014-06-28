@@ -1,6 +1,6 @@
-﻿using Microsoft.Office.Interop.Excel;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -20,7 +20,7 @@ namespace TimeCheck
     /// <summary>
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
-    public partial class MainWindow : System.Windows.Window
+    public partial class MainWindow : Elysium.Controls.Window
     {
         private string _rootPath = string.Empty;
 
@@ -29,10 +29,20 @@ namespace TimeCheck
 
         private const string SINSEI_FMT = "申請書_{0}.xls";
         private const string HOUKOKU_FMT = "WR0240【{0}年{1}月】{2}.xls";
-        private const string AD_FMT = "{0},{1}";//行,列
+        private const string AD_FMT = "{0},{1}"; //行,列
 
-        private const int R_IDX_KADOTIME = 3;       //行No 稼働時間
-        private const int C_IDX_HIDUKE_START = 2;   //列No 「1日」のセル
+        private const int R_IDX_TIME_KIHON = 9;         //行No 基本稼働時間
+        private const int R_IDX_TIME_MINASHI = 36;      //行No みなし稼働時間
+        private const int R_IDX_TIME_KOZYO_T = 21;      //行No 控除(遅刻)
+        private const int R_IDX_TIME_KOZYO_S = 26;      //行No 控除(早退)
+        private const int R_IDX_TIME_KOZYO_G = 31;      //行No 控除(外出)
+        private const int R_IDX_TIME_FUTUZAN = 40;      //行No 普通残業
+        private const int R_IDX_TIME_SINZAN = 44;       //行No 深夜残業
+        private const int R_IDX_TIME_SOUZAN = 48;       //行No 早朝残業
+        private const int R_IDX_TIME_HOTEIZAN = 52;     //行No 法定休日稼働
+        private const int R_IDX_TIME_HOTEISINZAN = 56;  //行No 法定休日深夜稼働
+
+        private const int C_IDX_HIDUKE_START = 21;      //列No 「1日」のセル
 
         public MainWindow()
         {
@@ -77,7 +87,6 @@ namespace TimeCheck
                 }
             }
             lbMember.ItemsSource = locMember;
-            lbMember.SelectedIndex = 0;
         }
 
         /// <summary>
@@ -97,12 +106,14 @@ namespace TimeCheck
         /// <param name="e"></param>
         private void btnCheck_Click(object sender, RoutedEventArgs e)
         {
+            txtCheckResult.Clear();
+
             if (!inputCheck(btnCheck.Name))
             {
                 return;
             }
 
-            loopLogic(btnCheck.Name);
+            loopLogic(btnCheck.Name, calCheckTaisyo.SelectedDate.Value);
 
             MessageBox.Show("処理が完了しました！");
 
@@ -115,12 +126,14 @@ namespace TimeCheck
         /// <param name="e"></param>
         private void btnSyukei_Click(object sender, RoutedEventArgs e)
         {
+            dgSyukeiResult.ItemsSource = null;
+
             if (!inputCheck(btnSyukei.Name))
             {
                 return;
             }
 
-            loopLogic(btnSyukei.Name);
+            loopLogic(btnSyukei.Name, calSyukeiTaisyo.SelectedDate.Value);
 
 
             MessageBox.Show("処理が完了しました！");
@@ -182,16 +195,14 @@ namespace TimeCheck
         /// </summary>
         /// <param name="btnName"></param>
         /// <returns></returns>
-        private bool loopLogic(string btnName)
+        private bool loopLogic(string btnName, DateTime selDate)
         {
-            DateTime selDate = calCheckTaisyo.SelectedDate.Value;
-
             Microsoft.Office.Interop.Excel.Application xlsSinsei
                 = new Microsoft.Office.Interop.Excel.Application();
             Microsoft.Office.Interop.Excel.Application xlsHokoku
                 = new Microsoft.Office.Interop.Excel.Application();
-            Workbook wrkBookSinsei = null;
-            Workbook wrkBookHokoku = null;
+            Microsoft.Office.Interop.Excel.Workbook wrkBookSinsei = null;
+            Microsoft.Office.Interop.Excel.Workbook wrkBookHokoku = null;
 
             foreach (string selMember in lbMember.SelectedItems)
             {
@@ -223,11 +234,11 @@ namespace TimeCheck
                     //チェック
                     if (btnCheck.Name.Equals(btnName))
                     {
-                        checkMain(wrkBookSinsei, wrkBookHokoku);
+                        checkMain(wrkBookSinsei, wrkBookHokoku, selDate);
                     }
                     else if (btnSyukei.Name.Equals(btnName))
                     {
-                        syukeiMain(wrkBookSinsei, wrkBookHokoku);
+                        syukeiMain(wrkBookSinsei, wrkBookHokoku, selDate);
                     }
                 }
                 finally
@@ -235,11 +246,11 @@ namespace TimeCheck
                     //Close
                     if (wrkBookSinsei != null)
                     {
-                        wrkBookSinsei.Close();
+                        wrkBookSinsei.Close(false);
                     }
                     if (wrkBookHokoku != null)
                     {
-                        wrkBookHokoku.Close();
+                        wrkBookHokoku.Close(false);
                     }
                 }
             }
@@ -253,9 +264,11 @@ namespace TimeCheck
         /// </summary>
         /// <param name="sinseiBook"></param>
         /// <param name="houkokuBook"></param>
-        private void checkMain(Workbook sinseiBook, Workbook houkokuBook)
+        private void checkMain(
+            Microsoft.Office.Interop.Excel.Workbook sinseiBook, 
+            Microsoft.Office.Interop.Excel.Workbook houkokuBook, 
+            DateTime selDate)
         {
-            DateTime selDate = calCheckTaisyo.SelectedDate.Value;
 
             //申請情報取込
 
@@ -289,9 +302,22 @@ namespace TimeCheck
         /// </summary>
         /// <param name="sinseiBook"></param>
         /// <param name="houkokuBook"></param>
-        private void syukeiMain(Workbook sinseiBook, Workbook houkokuBook)
+        private void syukeiMain(
+            Microsoft.Office.Interop.Excel.Workbook sinseiBook,
+            Microsoft.Office.Interop.Excel.Workbook houkokuBook,
+            DateTime selDate)
         {
-            DateTime selDate = calCheckTaisyo.SelectedDate.Value;
+            DataTable dtKekka = new DataTable();
+            dtKekka.Columns.Add("氏名", typeof(string));
+            dtKekka.Columns.Add("総稼動", typeof(string));
+            dtKekka.Columns.Add("基本稼働", typeof(string));
+            dtKekka.Columns.Add("みなし稼働", typeof(string));
+            dtKekka.Columns.Add("控除", typeof(string));
+            dtKekka.Columns.Add("普通残業", typeof(string));
+            dtKekka.Columns.Add("深夜残業", typeof(string));
+            dtKekka.Columns.Add("早朝稼働", typeof(string));
+            dtKekka.Columns.Add("法定休日稼働", typeof(string));
+            dtKekka.Columns.Add("作業内容", typeof(string));
 
             //申請情報解析
             List<Dictionary<string, string>> dicSinseiAlldata = getAllData(sinseiBook);
@@ -314,15 +340,32 @@ namespace TimeCheck
             // 指定期間に限定
             for (int i = 0; i < selDate.Day; i++)
             {
-                //基本
-                string adKihon = string.Format(AD_FMT, R_IDX_KADOTIME, C_IDX_HIDUKE_START + i);
-                double dblKihon = double.Parse(dicHoukokuAlldata[adKihon]);
-                DateTime dtKihon = DateTime.FromOADate(dblKihon);
 
-                totalKihon += dtKihon.TimeOfDay;
+                //基本稼働時間
+                string adKihon = string.Format(AD_FMT, R_IDX_TIME_KIHON, C_IDX_HIDUKE_START + i);
+                double dblKihon = 0;
+                if (double.TryParse(dicHoukokuAlldata[adKihon], out dblKihon))
+                {
+                    DateTime dtKihon = DateTime.FromOADate(dblKihon);
+                    totalKihon += dtKihon.TimeOfDay;
+                }
             }
 
-            MessageBox.Show(totalKihon.TotalHours.ToString("0") + totalKihon.ToString(@"\:hh\:mm"));
+            //バインド用結果設定
+            DataRow drKekka = dtKekka.NewRow();
+            drKekka["氏名"] = dicHoukokuAlldata["4,7"];
+            drKekka["総稼動"] = string.Empty;
+            drKekka["基本稼働"] = totalKihon.TotalHours.ToString("0") + totalKihon.ToString(@"\:mm");
+            drKekka["みなし稼働"] = string.Empty;
+            drKekka["控除"] = string.Empty;
+            drKekka["普通残業"] = string.Empty;
+            drKekka["深夜残業"] = string.Empty;
+            drKekka["早朝稼働"] = string.Empty;
+            drKekka["法定休日稼働"] = string.Empty;
+            drKekka["作業内容"] = string.Empty;
+            dtKekka.Rows.Add(drKekka);
+
+            dgSyukeiResult.ItemsSource = dtKekka.DefaultView;
 
             return;
         }
@@ -332,15 +375,15 @@ namespace TimeCheck
         /// </summary>
         /// <param name="wkBook"></param>
         /// <returns></returns>
-        private List<Dictionary<string, string>> getAllData(Workbook wkBook)
+        private List<Dictionary<string, string>> getAllData(Microsoft.Office.Interop.Excel.Workbook wkBook)
         {
             List<Dictionary<string, string>> res = new List<Dictionary<string, string>>();
 
-            foreach (Worksheet wkSheet in wkBook.Sheets)
+            foreach (Microsoft.Office.Interop.Excel.Worksheet wkSheet in wkBook.Sheets)
             {
                 Dictionary<string, string> dicSheet = new Dictionary<string, string>();
 
-                Range aRange = wkSheet.UsedRange;
+                Microsoft.Office.Interop.Excel.Range aRange = wkSheet.UsedRange;
 
                 object[,] dataAll = aRange.get_Value();
 
