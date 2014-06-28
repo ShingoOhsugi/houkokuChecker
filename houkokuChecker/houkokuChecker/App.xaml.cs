@@ -14,16 +14,12 @@ namespace houkokuChecker
     /// </summary>
     public partial class App : Application
     {
-        private void StartupHandler(object sender, System.Windows.StartupEventArgs e)
+        private void Application_Startup(object sender, StartupEventArgs e)
         {
             SolidColorBrush btn = Elysium.AccentBrushes.Blue;
             SolidColorBrush mozi = new SolidColorBrush(Colors.White);
 
-            Elysium.Manager.Apply(
-                this,
-                Elysium.Theme.Dark,
-                btn,
-                mozi);
+            Elysium.Manager.Apply(this, Elysium.Theme.Light, btn, mozi);
         }
     }
 }
