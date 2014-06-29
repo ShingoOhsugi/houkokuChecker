@@ -56,8 +56,8 @@ namespace houkokuChecker
         /// <param name="e"></param>
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            _rootPath = Directory.GetCurrentDirectory() + @"\file\";
-
+            _rootPath = Properties.Settings.Default.RootPath;
+            
             calCheckTaisyo.SelectedDate = DateTime.Now;
             calSyukeiTaisyo.SelectedDate = DateTime.Now;
 

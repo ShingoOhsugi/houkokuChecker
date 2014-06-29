@@ -34,7 +34,15 @@ namespace houkokuChecker
         /// <param name="e"></param>
         private void Window_Loaded_1(object sender, RoutedEventArgs e)
         {
-            fmMain.Navigate(new WelcomePage());
+            if (string.IsNullOrWhiteSpace(Properties.Settings.Default.RootPath))
+            {
+                fmMain.Navigate(new WelcomePage());
+            }
+            else
+            {
+                fmMain.Navigate(new MainPage());
+            }
+
         }
     }
 }
