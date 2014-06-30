@@ -3,17 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace houkokuChecker
 {
@@ -31,18 +23,25 @@ namespace houkokuChecker
         private const string HOUKOKU_FMT = "WR0240【{0}年{1}月】{2}.xls";
         private const string AD_FMT = "{0},{1}"; //行,列
 
-        private const int R_IDX_TIME_KIHON = 9;         //行No 基本稼働時間
-        private const int R_IDX_TIME_MINASHI = 36;      //行No みなし稼働時間
-        private const int R_IDX_TIME_KOZYO_T = 21;      //行No 控除(遅刻)
-        private const int R_IDX_TIME_KOZYO_S = 26;      //行No 控除(早退)
-        private const int R_IDX_TIME_KOZYO_G = 31;      //行No 控除(外出)
-        private const int R_IDX_TIME_FUTUZAN = 40;      //行No 普通残業
-        private const int R_IDX_TIME_SINZAN = 44;       //行No 深夜残業
-        private const int R_IDX_TIME_SOUZAN = 48;       //行No 早朝残業
-        private const int R_IDX_TIME_HOTEIZAN = 52;     //行No 法定休日稼働
-        private const int R_IDX_TIME_HOTEISINZAN = 56;  //行No 法定休日深夜稼働
+        //申請書
+        private const long C_IDX_FF_KBN1 = 3;      //列No 振出・振休 区分1
+        private const long C_IDX_FF_STK1 = 4;      //列No 振出・振休 取得日1
+        private const long C_IDX_FF_KBN2 = 5;      //列No 振出・振休 区分2
+        private const long C_IDX_FF_STK2 = 6;      //列No 振出・振休 取得日2
 
-        private const int C_IDX_HIDUKE_START = 21;      //列No 「1日」のセル
+        //報告書
+        private const long R_IDX_TIME_KIHON = 9;         //行No 基本稼働時間
+        private const long R_IDX_TIME_MINASHI = 36;      //行No みなし稼働時間
+        private const long R_IDX_TIME_KOZYO_T = 21;      //行No 控除(遅刻)
+        private const long R_IDX_TIME_KOZYO_S = 26;      //行No 控除(早退)
+        private const long R_IDX_TIME_KOZYO_G = 31;      //行No 控除(外出)
+        private const long R_IDX_TIME_FUTUZAN = 40;      //行No 普通残業
+        private const long R_IDX_TIME_SINZAN = 44;       //行No 深夜残業
+        private const long R_IDX_TIME_SOUZAN = 48;       //行No 早朝残業
+        private const long R_IDX_TIME_HOTEIZAN = 52;     //行No 法定休日稼働
+        private const long R_IDX_TIME_HOTEISINZAN = 56;  //行No 法定休日深夜稼働
+
+        private const long C_IDX_HIDUKE_START = 21;      //列No 「1日」のセル
 
         public MainPage()
         {
@@ -291,7 +290,7 @@ namespace houkokuChecker
 
             foreach (KeyValuePair<string, string> hitData in dicHoukokuAlldata.Where(p => p.Value == ("NG")))
             {
-                string[] hitAd = splitAdress(hitData.Key);
+                long[] hitAd = splitAdress(hitData.Key);
                 txtCheckResult.Text += string.Format("NGがあります。 行No: {0} 列No: {1} \n", hitAd[0], hitAd[1]);
             };
 
@@ -331,14 +330,80 @@ namespace houkokuChecker
 
             //申請情報解析
             List<Dictionary<string, string>> dicSinseiAlldata = getAllData(sinseiBook);
+            List<string[]> ffDic = new List<string[]>();  // 振出・振休申請まとめ
 
             foreach (Dictionary<string, string> dicSheet in dicSinseiAlldata)
             {
-
-                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Contains("日付")))
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Contains("振出・振休")))
                 {
-                    string[] hitAd = splitAdress(hitData.Key);
+                    long[] furiTitleAd = splitAdress(hitData.Key);
 
+                    for (int i = 2; i < 100; i++)
+                    {
+                        long rowBase = furiTitleAd[0] + i;
+
+                        //回数が空だったら次のセクションへ
+                        if (dicSheet.ContainsKey(createAdress(rowBase, 1)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, 1)]))
+                        {
+                            break;
+                        }
+
+                        //区分１が空だったら次の行へ
+                        string ffKbn1 = dicSheet[createAdress(rowBase, C_IDX_FF_KBN1)];
+                        string ffStk1 = dicSheet[createAdress(rowBase, C_IDX_FF_STK1)];
+                        string ffKbn2 = dicSheet[createAdress(rowBase, C_IDX_FF_KBN2)];
+                        string ffStk2 = dicSheet[createAdress(rowBase, C_IDX_FF_STK2)];
+                        if (string.IsNullOrWhiteSpace(ffKbn1))
+                        {
+                            continue;
+                        }
+
+                        switch (ffKbn1){
+                            case "振出":
+                            case "振休":
+                                if ("振休".Equals(ffKbn2) || "振出".Equals(ffKbn2))
+                                {
+                                    ffDic.Add(new string[] { ffStk1, ffKbn1, ffStk2 });//1/2 振出　 3/1
+                                    ffDic.Add(new string[] { ffStk2, ffKbn2, ffStk1 });//3/1 振休　 1/2
+                                }
+                                else if ("振休訂正".Equals(ffKbn2) || "振出訂正".Equals(ffKbn2))
+                                {
+                                    for (int p = 0; p < ffDic.Count; p++ )
+                                    {
+                                        string[] rowVal = ffDic[p];
+                                        if (ffStk1.Equals(rowVal[2]))
+                                        {
+                                            ffDic[p] = new string[] { rowVal[0], ffKbn2, ffStk2 };
+                                            break;
+                                        }
+                                    }
+                                    if ("振休訂正".Equals(ffKbn2))
+                                    {
+                                        ffDic.Add(new string[] { ffStk2, "振休", ffStk1 });
+                                    }
+                                    else
+                                    {
+                                        ffDic.Add(new string[] { ffStk2, "振出", ffStk1 });
+                                    }
+                                }
+                                else
+                                {
+                                    //取消
+                                }
+                                break;
+
+                            case "振出取消":
+                                //振休取消
+
+                                break;
+
+                            case "振休取消":
+                                //振出取消
+
+                                break;
+                        }
+                    }
 
                 };
             }
@@ -426,9 +491,10 @@ namespace houkokuChecker
         /// </summary>
         /// <param name="dicKey"></param>
         /// <returns>[0]:行　[1]:列</returns>
-        private static string[] splitAdress(string dicKey)
+        private static long[] splitAdress(string dicKey)
         {
-            return dicKey.Split(',');
+            string[] sp = dicKey.Split(',');
+            return new long[] { long.Parse(sp[0]), long.Parse(sp[1]) }; 
         }
 
         /// <summary>
@@ -437,7 +503,7 @@ namespace houkokuChecker
         /// <param name="row"></param>
         /// <param name="col"></param>
         /// <returns></returns>
-        private static string createAdress(object row, object col)
+        private static string createAdress(long row, long col)
         {
             return string.Format(AD_FMT, row, col);
         }
