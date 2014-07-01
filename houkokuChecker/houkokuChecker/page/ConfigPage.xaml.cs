@@ -18,6 +18,8 @@ namespace houkokuChecker
             txtSyainCd.Text = Properties.Settings.Default.SyainCode;
             txtSyainNm.Text = Properties.Settings.Default.SyainName;
             txtRootPath.Text = Properties.Settings.Default.RootPath;
+
+            Properties.Settings.Default.Reset();
         }
 
         /// <summary>
@@ -33,6 +35,7 @@ namespace houkokuChecker
             {
                 //入力エラー
                 MessageBox.Show("すべて入力してください。");
+                return;
             }
 
             // 設定ファイルに保存

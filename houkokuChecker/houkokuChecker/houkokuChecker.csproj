@@ -60,6 +60,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="table\SinseiTable.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="table\SyukeiTable.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Page Include="page\MainPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

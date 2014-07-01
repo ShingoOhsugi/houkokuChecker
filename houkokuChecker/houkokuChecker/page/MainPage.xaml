@@ -24,7 +24,7 @@
                 <Button x:Name="btnConfig" Content="設定" HorizontalAlignment="Left" Margin="0,50,0,0" Click="btnConfig_Click" />
             </StackPanel>
 
-            <TabControl x:Name="tabMain"  Width="700" Margin="10,0,0,0">
+            <TabControl x:Name="tabCheck"  Width="700" Margin="10,0,0,0">
                 <TabItem x:Name="tiCheck" Header="チェック">
                     <StackPanel Margin="5">
                         <StackPanel Orientation="Horizontal" >
@@ -45,21 +45,10 @@
                         <DataGrid x:Name="dgSyukeiResult" Height="270" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True" RowHeaderWidth="0"/>
                     </StackPanel>
                 </TabItem>
-                <TabItem x:Name="tiDaida" Header="代打">
+                <TabItem x:Name="tiSinseiKakunin" Header="申請確認">
                     <StackPanel Margin="5">
-                        <StackPanel Orientation="Horizontal" >
-                            <Label Content="氏 名" Width="120" />
-                            <TextBox x:Name="txtName" Width="125" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" >
-                            <Label Content="年 月" Width="120"/>
-                            <DatePicker x:Name="calNengetu" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" >
-                            <Label Content="プロジェクトコード(主)" Width="120"/>
-                            <TextBox x:Name="txtPrjCode" Width="125" />
-                        </StackPanel>
-                        <Button x:Name="btnDaida" Content="代打" Width="75" Click="btnDaida_Click" />
+                        <Button x:Name="btnSinseiKaku" Content="確認" Width="75" Click="btnSinseiKaku_Click"/>
+                        <DataGrid x:Name="dgSinseiResult" Height="400" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True" RowHeaderWidth="0"/>
                     </StackPanel>
                 </TabItem>
             </TabControl>

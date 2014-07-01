@@ -30,7 +30,8 @@ namespace houkokuChecker
         private const long C_IDX_FF_STK2 = 6;      //列No 振出・振休 取得日2
 
         //報告書
-        private const long R_IDX_TIME_KIHON = 9;         //行No 基本稼働時間
+        private const long R_IDX_TIME_KIHON = 15;        //行No 基本稼働時間
+        private const long R_IDX_TIME_MINASHI_H = 14;    //行No みなし補足時間
         private const long R_IDX_TIME_MINASHI = 36;      //行No みなし稼働時間
         private const long R_IDX_TIME_KOZYO_T = 21;      //行No 控除(遅刻)
         private const long R_IDX_TIME_KOZYO_S = 26;      //行No 控除(早退)
@@ -42,6 +43,9 @@ namespace houkokuChecker
         private const long R_IDX_TIME_HOTEISINZAN = 56;  //行No 法定休日深夜稼働
 
         private const long C_IDX_HIDUKE_START = 21;      //列No 「1日」のセル
+
+        SyukeiTable _dtKekka;
+        SinseiTable _dtSinsei;
 
         public MainPage()
         {
@@ -107,8 +111,15 @@ namespace houkokuChecker
         {
             txtCheckResult.Clear();
 
-            if (!inputCheck(btnCheck.Name))
+            if (lbMember.SelectedItems.Count == 0)
             {
+                MessageBox.Show("メンバを選択してください");
+                return;
+            }
+
+            if (calCheckTaisyo.SelectedDate.HasValue == false)
+            {
+                MessageBox.Show("日付を選択してください");
                 return;
             }
 
@@ -126,29 +137,47 @@ namespace houkokuChecker
         private void btnSyukei_Click(object sender, RoutedEventArgs e)
         {
             dgSyukeiResult.ItemsSource = null;
+            _dtKekka = new SyukeiTable();
 
-            if (!inputCheck(btnSyukei.Name))
+            if (lbMember.SelectedItems.Count == 0)
             {
+                MessageBox.Show("メンバを選択してください");
+                return;
+            }
+
+            if (calSyukeiTaisyo.SelectedDate.HasValue == false)
+            {
+                MessageBox.Show("日付を選択してください");
                 return;
             }
 
             loopLogic(btnSyukei.Name, calSyukeiTaisyo.SelectedDate.Value);
 
+            dgSyukeiResult.ItemsSource = _dtKekka.DefaultView;
 
             MessageBox.Show("処理が完了しました！");
 
         }
 
         /// <summary>
-        /// 代打ボタン押下時
+        /// 申請確認ボタン押下時
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void btnDaida_Click(object sender, RoutedEventArgs e)
+        private void btnSinseiKaku_Click(object sender, RoutedEventArgs e)
         {
-            //checkLogic(btnDaida.Name);
+            dgSinseiResult.ItemsSource = null;
+            _dtSinsei = new SinseiTable();
 
-            //loopLogic(btnDaida.Name);
+            if (lbMember.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("メンバを選択してください");
+                return;
+            }
+
+            loopLogic(btnSinseiKaku.Name);
+
+            dgSinseiResult.ItemsSource = _dtSinsei.DefaultView;
 
             MessageBox.Show("処理が完了しました！");
 
@@ -165,46 +194,11 @@ namespace houkokuChecker
         }
 
         /// <summary>
-        /// 入力チェック
-        /// </summary>
-        /// <param name="btnName"></param>
-        /// <returns></returns>
-        private bool inputCheck(string btnName)
-        {
-            if (lbMember.SelectedItems.Count == 0)
-            {
-                MessageBox.Show("メンバを選択してください");
-                return false;
-            }
-
-
-            if (btnCheck.Name.Equals(btnName))
-            {
-                if (calCheckTaisyo.SelectedDate.HasValue == false)
-                {
-                    MessageBox.Show("日付を選択してください");
-                    return false;
-                }
-            }
-            else if (btnSyukei.Name.Equals(btnName))
-            {
-                if (calSyukeiTaisyo.SelectedDate.HasValue == false)
-                {
-                    MessageBox.Show("日付を選択してください");
-                    return false;
-                }
-            }
-
-            return true;
-
-        }
-
-        /// <summary>
         /// 申請、報告書取り込み
         /// </summary>
         /// <param name="btnName"></param>
         /// <returns></returns>
-        private bool loopLogic(string btnName, DateTime selDate)
+        private bool loopLogic(string btnName, DateTime selDate = new DateTime())
         {
             Microsoft.Office.Interop.Excel.Application xlsSinsei
                 = new Microsoft.Office.Interop.Excel.Application();
@@ -235,9 +229,12 @@ namespace houkokuChecker
                     {
                         MessageBox.Show(selMember + " の報告書を格納してください。:" + hokokuFilePath);
 
-                        return false;
+                        //return false;
                     }
-                    wrkBookHokoku = xlsHokoku.Workbooks.Open(hokokuFilePath);
+                    else
+                    {
+                        wrkBookHokoku = xlsHokoku.Workbooks.Open(hokokuFilePath);
+                    }
 
 
                     //チェック
@@ -248,6 +245,10 @@ namespace houkokuChecker
                     else if (btnSyukei.Name.Equals(btnName))
                     {
                         syukeiMain(wrkBookSinsei, wrkBookHokoku, selDate);
+                    }
+                    else if (btnSinseiKaku.Name.Equals(btnName))
+                    {
+                        sinseiKakuninMain(wrkBookSinsei);
                     }
                 }
                 finally
@@ -316,21 +317,144 @@ namespace houkokuChecker
             Microsoft.Office.Interop.Excel.Workbook houkokuBook,
             DateTime selDate)
         {
-            DataTable dtKekka = new DataTable();
-            dtKekka.Columns.Add("氏名", typeof(string));
-            dtKekka.Columns.Add("総稼動", typeof(string));
-            dtKekka.Columns.Add("基本稼働", typeof(string));
-            dtKekka.Columns.Add("みなし稼働", typeof(string));
-            dtKekka.Columns.Add("控除", typeof(string));
-            dtKekka.Columns.Add("普通残業", typeof(string));
-            dtKekka.Columns.Add("深夜残業", typeof(string));
-            dtKekka.Columns.Add("早朝稼働", typeof(string));
-            dtKekka.Columns.Add("法定休日稼働", typeof(string));
-            dtKekka.Columns.Add("作業内容", typeof(string));
+
+            //報告情報解析
+            Dictionary<string, string> dicHoukokuAlldata = getAllData(houkokuBook)[0];
+            TimeSpan totalKihon = new TimeSpan();
+            TimeSpan totalMinasi = new TimeSpan();
+            TimeSpan totalKojo = new TimeSpan();
+            TimeSpan totalFTZan = new TimeSpan();
+            TimeSpan totalSNZan = new TimeSpan();
+            TimeSpan totalSOZan = new TimeSpan();
+            TimeSpan totalKYZan = new TimeSpan();
+
+            // 指定期間に限定
+            for (int i = 0; i < selDate.Day; i++)
+            {
+                //基本稼働時間
+                double dblVal = 0;
+                string exAd = createAdress(R_IDX_TIME_KIHON, C_IDX_HIDUKE_START + i);
+
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalKihon += dtVal.TimeOfDay;
+                }
+
+                //みなし稼働
+                // みなし補足時間
+                exAd = createAdress(R_IDX_TIME_MINASHI_H, C_IDX_HIDUKE_START + i);
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalMinasi += dtVal.TimeOfDay;
+                }
+                // みなし稼働
+                exAd = createAdress(R_IDX_TIME_MINASHI, C_IDX_HIDUKE_START + i);
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalMinasi += dtVal.TimeOfDay;
+                }
+
+                //控除
+                // 控除(遅刻)
+                exAd = createAdress(R_IDX_TIME_KOZYO_T, C_IDX_HIDUKE_START + i);
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalKojo += dtVal.TimeOfDay;
+                }
+                // 控除(早退)
+                exAd = createAdress(R_IDX_TIME_KOZYO_S, C_IDX_HIDUKE_START + i);
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalKojo += dtVal.TimeOfDay;
+                }
+                // 控除(外出)
+                exAd = createAdress(R_IDX_TIME_KOZYO_G, C_IDX_HIDUKE_START + i);
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalKojo += dtVal.TimeOfDay;
+                }
+
+                //普通残業
+                exAd = createAdress(R_IDX_TIME_FUTUZAN, C_IDX_HIDUKE_START + i);
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalFTZan += dtVal.TimeOfDay;
+                }
+
+                //深夜残業
+                exAd = createAdress(R_IDX_TIME_SINZAN, C_IDX_HIDUKE_START + i);
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalSNZan += dtVal.TimeOfDay;
+                }
+
+                //早朝稼働
+                exAd = createAdress(R_IDX_TIME_SOUZAN, C_IDX_HIDUKE_START + i);
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalSOZan += dtVal.TimeOfDay;
+                }
+
+                //法定休日稼働
+                // 法定休日稼働
+                exAd = createAdress(R_IDX_TIME_HOTEIZAN, C_IDX_HIDUKE_START + i);
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalKYZan += dtVal.TimeOfDay;
+                }
+                // 法定休日深夜稼働
+                exAd = createAdress(R_IDX_TIME_HOTEISINZAN, C_IDX_HIDUKE_START + i);
+                if (double.TryParse(dicHoukokuAlldata[exAd], out dblVal))
+                {
+                    DateTime dtVal = DateTime.FromOADate(dblVal);
+                    totalKYZan += dtVal.TimeOfDay;
+                }
+
+                //作業内容
+
+            }
+
+            //バインド用結果設定
+            //Math.Floor(totalKihon.TotalHours).ToString("0") + totalKihon.ToString(@"\:mm");
+            DataRow drKekka = _dtKekka.NewRow();
+            drKekka["氏名"] = dicHoukokuAlldata["4,7"];
+            TimeSpan tsTotal = totalKihon + totalMinasi + totalKojo + totalFTZan + totalSNZan + totalSOZan + totalKYZan;
+            drKekka["総稼動"] = tsTotal.TotalHours.ToString("0.00");
+            drKekka["基本稼働"] = totalKihon.TotalHours.ToString("0.00");
+            drKekka["みなし稼働"] = totalMinasi.TotalHours.ToString("0.00");
+            drKekka["控除"] = totalKojo.TotalHours.ToString("0.00");
+            drKekka["普通残業"] = totalFTZan.TotalHours.ToString("0.00");
+            drKekka["深夜残業"] = totalSNZan.TotalHours.ToString("0.00");
+            drKekka["早朝稼働"] = totalSOZan.TotalHours.ToString("0.00");
+            drKekka["法定休日稼働"] = totalKYZan.TotalHours.ToString("0.00");
+            drKekka["作業内容"] = dicHoukokuAlldata["80,2"] + " : " + dicHoukokuAlldata["81,6"];
+            _dtKekka.Rows.Add(drKekka);
+
+            return;
+        }
+
+        /// <summary>
+        /// 申請確認処理メイン
+        /// </summary>
+        /// <param name="sinseiBook"></param>
+        /// <param name="houkokuBook"></param>
+        private void sinseiKakuninMain(
+            Microsoft.Office.Interop.Excel.Workbook sinseiBook)
+        {
 
             //申請情報解析
             List<Dictionary<string, string>> dicSinseiAlldata = getAllData(sinseiBook);
-            List<string[]> ffDic = new List<string[]>();  // 振出・振休申請まとめ
+            //List<string[]> ffDic = new List<string[]>();  // 振出・振休申請まとめ
 
             foreach (Dictionary<string, string> dicSheet in dicSinseiAlldata)
             {
@@ -359,33 +483,57 @@ namespace houkokuChecker
                             continue;
                         }
 
-                        switch (ffKbn1){
+                        switch (ffKbn1)
+                        {
                             case "振出":
                             case "振休":
                                 if ("振休".Equals(ffKbn2) || "振出".Equals(ffKbn2))
                                 {
-                                    ffDic.Add(new string[] { ffStk1, ffKbn1, ffStk2 });//1/2 振出　 3/1
-                                    ffDic.Add(new string[] { ffStk2, ffKbn2, ffStk1 });//3/1 振休　 1/2
+                                    //ffDic.Add(new string[] { ffStk1, ffKbn1, ffStk2 });//1/2 振出　 3/1
+                                    //ffDic.Add(new string[] { ffStk2, ffKbn2, ffStk1 });//3/1 振休　 1/2
+                                    DataRow dr = _dtSinsei.NewRow();
+                                    dr["氏名"] = dicSheet["3,8"];
+                                    dr["対象日"] = ffStk1;
+                                    dr["出休"] = ffKbn1;
+                                    dr["出休日付"] = ffStk2;
+                                    _dtSinsei.Rows.Add(dr);
+
+                                    dr = _dtSinsei.NewRow();
+                                    dr["氏名"] = dicSheet["3,8"];
+                                    dr["対象日"] = ffStk2;
+                                    dr["出休"] = ffKbn2;
+                                    dr["出休日付"] = ffStk1;
+                                    _dtSinsei.Rows.Add(dr);
+
                                 }
                                 else if ("振休訂正".Equals(ffKbn2) || "振出訂正".Equals(ffKbn2))
                                 {
-                                    for (int p = 0; p < ffDic.Count; p++ )
+                                    for (int p = 0; p < _dtSinsei.Rows.Count; p++)
                                     {
-                                        string[] rowVal = ffDic[p];
-                                        if (ffStk1.Equals(rowVal[2]))
+                                        DataRow rowVal = _dtSinsei.Rows[p];
+                                        if (ffStk1.Equals(rowVal["出休日付"]))
                                         {
-                                            ffDic[p] = new string[] { rowVal[0], ffKbn2, ffStk2 };
+                                            DataRow dr = _dtSinsei.NewRow();
+                                            dr["氏名"] = rowVal["氏名"];
+                                            dr["対象日"] = rowVal["対象日"];
+                                            dr["訂正"] = ffKbn2;
+                                            dr["訂正日付"] = ffStk2;
+                                            _dtSinsei.Rows.Add(dr);
+
+                                            _dtSinsei.Rows.Remove(rowVal);
+
+                                            //rowVal["出休"] = new string[] { rowVal[0], ffKbn2, ffStk2 };//3/1 振休訂正 4/1
                                             break;
                                         }
                                     }
-                                    if ("振休訂正".Equals(ffKbn2))
-                                    {
-                                        ffDic.Add(new string[] { ffStk2, "振休", ffStk1 });
-                                    }
-                                    else
-                                    {
-                                        ffDic.Add(new string[] { ffStk2, "振出", ffStk1 });
-                                    }
+                                    DataRow dr2 = _dtSinsei.NewRow();
+                                    dr2["氏名"] = dicSheet["3,8"];
+                                    dr2["対象日"] = ffStk2;
+                                    dr2["出休"] = ffKbn2.Substring(0, 2);
+                                    dr2["出休日付"] = ffStk1;
+                                    _dtSinsei.Rows.Add(dr2);
+
+                                    //ffDic.Add(new string[] { ffStk2, ffKbn2.Substring(0, 2), ffStk1 });// 4/1 振休　 1/2
                                 }
                                 else
                                 {
@@ -407,40 +555,6 @@ namespace houkokuChecker
 
                 };
             }
-
-            //報告情報解析
-            Dictionary<string, string> dicHoukokuAlldata = getAllData(houkokuBook)[0];
-            TimeSpan totalKihon = new TimeSpan();
-
-            // 指定期間に限定
-            for (int i = 0; i < selDate.Day; i++)
-            {
-
-                //基本稼働時間
-                string adKihon = string.Format(AD_FMT, R_IDX_TIME_KIHON, C_IDX_HIDUKE_START + i);
-                double dblKihon = 0;
-                if (double.TryParse(dicHoukokuAlldata[adKihon], out dblKihon))
-                {
-                    DateTime dtKihon = DateTime.FromOADate(dblKihon);
-                    totalKihon += dtKihon.TimeOfDay;
-                }
-            }
-
-            //バインド用結果設定
-            DataRow drKekka = dtKekka.NewRow();
-            drKekka["氏名"] = dicHoukokuAlldata["4,7"];
-            drKekka["総稼動"] = string.Empty;
-            drKekka["基本稼働"] = totalKihon.TotalHours.ToString("0") + totalKihon.ToString(@"\:mm");
-            drKekka["みなし稼働"] = string.Empty;
-            drKekka["控除"] = string.Empty;
-            drKekka["普通残業"] = string.Empty;
-            drKekka["深夜残業"] = string.Empty;
-            drKekka["早朝稼働"] = string.Empty;
-            drKekka["法定休日稼働"] = string.Empty;
-            drKekka["作業内容"] = string.Empty;
-            dtKekka.Rows.Add(drKekka);
-
-            dgSyukeiResult.ItemsSource = dtKekka.DefaultView;
 
             return;
         }
