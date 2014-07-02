@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -151,7 +152,27 @@ namespace houkokuChecker
                 return;
             }
 
-            loopLogic(btnSyukei.Name, calSyukeiTaisyo.SelectedDate.Value);
+            foreach (string selMember in lbMember.SelectedItems)
+            {
+                //報告書Open
+                string hokokuFilePath =
+                    _rootPath + string.Format(HOUKOKU_FMT,
+                                              calSyukeiTaisyo.SelectedDate.Value.Year.ToString(),
+                                              calSyukeiTaisyo.SelectedDate.Value.Month.ToString("00"),
+                                              selMember);
+
+                Dictionary<string, Dictionary<string, string>> dicHoukoku =
+                    getExcelData(hokokuFilePath);
+
+                //報告書なしエラー
+                if (dicHoukoku.Count == 0)
+                {
+                    MessageBox.Show(selMember + " の報告書を格納してください。:" + hokokuFilePath);
+                    return;
+                }
+
+                syukeiMain(dicHoukoku, calSyukeiTaisyo.SelectedDate.Value);
+            }
 
             dgSyukeiResult.ItemsSource = _dtKekka.DefaultView;
 
@@ -175,7 +196,24 @@ namespace houkokuChecker
                 return;
             }
 
-            loopLogic(btnSinseiKaku.Name);
+            foreach (string selMember in lbMember.SelectedItems)
+            {
+                //申請書Open
+                string sinseiFilePath =
+                    _rootPath + string.Format(SINSEI_FMT, selMember);
+
+                Dictionary<string, Dictionary<string, string>> dicSinsei = 
+                    getExcelData(sinseiFilePath);
+
+                //申請書なしエラー
+                if (dicSinsei.Count == 0)
+                {
+                    MessageBox.Show(selMember + " の申請書を格納してください。:" + sinseiFilePath);
+                    return;
+                }
+
+                sinseiKakuninMain(dicSinsei);
+            }
 
             dgSinseiResult.ItemsSource = _dtSinsei.DefaultView;
 
@@ -242,14 +280,6 @@ namespace houkokuChecker
                     {
                         checkMain(wrkBookSinsei, wrkBookHokoku, selDate);
                     }
-                    else if (btnSyukei.Name.Equals(btnName))
-                    {
-                        syukeiMain(wrkBookSinsei, wrkBookHokoku, selDate);
-                    }
-                    else if (btnSinseiKaku.Name.Equals(btnName))
-                    {
-                        sinseiKakuninMain(wrkBookSinsei);
-                    }
                 }
                 finally
                 {
@@ -310,16 +340,15 @@ namespace houkokuChecker
         /// <summary>
         /// 集計処理メイン
         /// </summary>
-        /// <param name="sinseiBook"></param>
-        /// <param name="houkokuBook"></param>
+        /// <param name="dicSinsei"></param>
+        /// <param name="selDate"></param>
         private void syukeiMain(
-            Microsoft.Office.Interop.Excel.Workbook sinseiBook,
-            Microsoft.Office.Interop.Excel.Workbook houkokuBook,
+            Dictionary<string, Dictionary<string, string>> dicHoukoku,
             DateTime selDate)
         {
 
             //報告情報解析
-            Dictionary<string, string> dicHoukokuAlldata = getAllData(houkokuBook)[0];
+            Dictionary<string, string> dicHoukokuAlldata = dicHoukoku["社員"];
             TimeSpan totalKihon = new TimeSpan();
             TimeSpan totalMinasi = new TimeSpan();
             TimeSpan totalKojo = new TimeSpan();
@@ -446,17 +475,13 @@ namespace houkokuChecker
         /// <summary>
         /// 申請確認処理メイン
         /// </summary>
-        /// <param name="sinseiBook"></param>
-        /// <param name="houkokuBook"></param>
-        private void sinseiKakuninMain(
-            Microsoft.Office.Interop.Excel.Workbook sinseiBook)
+        /// <param name="dicSinsei"></param>
+        private void sinseiKakuninMain(Dictionary<string, Dictionary<string, string>> dicSinsei)
         {
 
             //申請情報解析
-            List<Dictionary<string, string>> dicSinseiAlldata = getAllData(sinseiBook);
-            //List<string[]> ffDic = new List<string[]>();  // 振出・振休申請まとめ
 
-            foreach (Dictionary<string, string> dicSheet in dicSinseiAlldata)
+            foreach (Dictionary<string, string> dicSheet in dicSinsei.Values)
             {
                 foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Contains("振出・振休")))
                 {
@@ -475,13 +500,14 @@ namespace houkokuChecker
 
                         //区分１が空だったら次の行へ
                         string ffKbn1 = dicSheet[createAdress(rowBase, C_IDX_FF_KBN1)];
-                        string ffStk1 = dicSheet[createAdress(rowBase, C_IDX_FF_STK1)];
-                        string ffKbn2 = dicSheet[createAdress(rowBase, C_IDX_FF_KBN2)];
-                        string ffStk2 = dicSheet[createAdress(rowBase, C_IDX_FF_STK2)];
                         if (string.IsNullOrWhiteSpace(ffKbn1))
                         {
                             continue;
                         }
+
+                        string ffStk1 = DateTime.ParseExact(dicSheet[createAdress(rowBase, C_IDX_FF_STK1)], "yyyy/MM/dd H:mm:ss", CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ffKbn2 = dicSheet[createAdress(rowBase, C_IDX_FF_KBN2)];
+                        string ffStk2 = DateTime.ParseExact(dicSheet[createAdress(rowBase, C_IDX_FF_STK2)], "yyyy/MM/dd H:mm:ss", CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
 
                         switch (ffKbn1)
                         {
@@ -489,8 +515,6 @@ namespace houkokuChecker
                             case "振休":
                                 if ("振休".Equals(ffKbn2) || "振出".Equals(ffKbn2))
                                 {
-                                    //ffDic.Add(new string[] { ffStk1, ffKbn1, ffStk2 });//1/2 振出　 3/1
-                                    //ffDic.Add(new string[] { ffStk2, ffKbn2, ffStk1 });//3/1 振休　 1/2
                                     DataRow dr = _dtSinsei.NewRow();
                                     dr["氏名"] = dicSheet["3,8"];
                                     dr["対象日"] = ffStk1;
@@ -522,7 +546,6 @@ namespace houkokuChecker
 
                                             _dtSinsei.Rows.Remove(rowVal);
 
-                                            //rowVal["出休"] = new string[] { rowVal[0], ffKbn2, ffStk2 };//3/1 振休訂正 4/1
                                             break;
                                         }
                                     }
@@ -533,7 +556,6 @@ namespace houkokuChecker
                                     dr2["出休日付"] = ffStk1;
                                     _dtSinsei.Rows.Add(dr2);
 
-                                    //ffDic.Add(new string[] { ffStk2, ffKbn2.Substring(0, 2), ffStk1 });// 4/1 振休　 1/2
                                 }
                                 else
                                 {
@@ -624,42 +646,71 @@ namespace houkokuChecker
 
 
 
-        //申請チェックサンプル
-        private void testc()
+        /// <summary>
+        /// Excel → Dictionary変換
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns>dicのキーはシート名</returns>
+        private Dictionary<string, Dictionary<string, string>> getExcelData(string filePath)
         {
+            Dictionary<string, Dictionary<string, string>> res =
+                new Dictionary<string, Dictionary<string, string>>();
 
-            List<string> outList = new List<string>();//記入対象日：申請内容：新記入日
-
-            //Microsoft.Office.Interop.Excel
-            List<string[]> mainList = new List<string[]>();
-            List<string[]> subList = new List<string[]>();
-
-            mainList.Add(new string[] { "2015/1/1", "2015/2/1" });
-
-            subList.Add(new string[] { "2015/1/1", "2015/2/3" });
-            subList.Add(new string[] { "2015/1/1", "2015/2/4" });
-
-            foreach (string[] row in mainList)
+            if (File.Exists(filePath) == false)
             {
-                outList.Add("対象" + row[0] + ":振出" + row[1]);
+                return res;
+            }
 
-                string oldDate = row[1];
+            Microsoft.Office.Interop.Excel.Application xlsFile
+                = new Microsoft.Office.Interop.Excel.Application();
 
-                foreach (string[] subRow in subList)
+            Microsoft.Office.Interop.Excel.Workbook xlsBook = null;
+
+            try
+            {
+                xlsBook = xlsFile.Workbooks.Open(filePath);
+
+                foreach (Microsoft.Office.Interop.Excel.Worksheet xlsSheet in xlsBook.Sheets)
                 {
-                    if (row[0].Equals(subRow[0]))
+                    Dictionary<string, string> dicSheet = new Dictionary<string, string>();
+
+                    Microsoft.Office.Interop.Excel.Range aRange = xlsSheet.UsedRange;
+
+                    object[,] dataAll = aRange.get_Value();
+
+                    if (dataAll == null)
                     {
-                        outList.Add("対象" + oldDate + ":振休訂" + subRow[1]);
-                        oldDate = subRow[1];
+                        res.Add(xlsSheet.Name, dicSheet);
+                        continue;
                     }
+
+                    long iRowCnt = dataAll.GetUpperBound(0);
+                    long iColCnt = dataAll.GetUpperBound(1);
+
+                    for (long r = 1; r <= iRowCnt; r++)
+                    {
+                        for (long c = 1; c <= iColCnt; c++)
+                        {
+                            dicSheet.Add(
+                                createAdress(r, c),
+                                dataAll[r, c] == null ? string.Empty : dataAll[r, c].ToString());
+                        }
+                    }
+
+                    res.Add(xlsSheet.Name, dicSheet);
                 }
-                outList.Add("対象" + oldDate + ":振休" + row[0]);
+
+                return res;
 
             }
-            outList.Sort();
-
-            MessageBox.Show("ユーザ情報セット");
-
+            finally
+            {
+                //Close
+                if (xlsBook != null)
+                {
+                    xlsBook.Close(false);
+                }
+            }
         }
 
     }
