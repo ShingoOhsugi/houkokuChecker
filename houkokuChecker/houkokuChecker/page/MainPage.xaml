@@ -42,13 +42,13 @@
                             <Calendar x:Name="calSyukeiTaisyo"/>
                         </StackPanel>
                         <Button x:Name="btnSyukei" Content="集計" Width="75" Click="btnSyukei_Click"/>
-                        <DataGrid x:Name="dgSyukeiResult" Height="270" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True" RowHeaderWidth="0"/>
+                        <DataGrid x:Name="dgSyukeiResult" Height="270" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True" RowHeaderWidth="0" SelectionUnit="Cell"/>
                     </StackPanel>
                 </TabItem>
                 <TabItem x:Name="tiSinseiKakunin" Header="申請確認">
                     <StackPanel Margin="5">
                         <Button x:Name="btnSinseiKaku" Content="確認" Width="75" Click="btnSinseiKaku_Click"/>
-                        <DataGrid x:Name="dgSinseiResult" Height="400" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True" RowHeaderWidth="0"/>
+                        <DataGrid x:Name="dgSinseiResult" Height="400" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True" RowHeaderWidth="0" SelectionUnit="Cell"/>
                     </StackPanel>
                 </TabItem>
             </TabControl>

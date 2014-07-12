@@ -25,6 +25,18 @@ namespace houkokuChecker
         private const string AD_FMT = "{0},{1}"; //行,列
 
         //申請書
+        private const long C_IDX_KAISU = 1;        //列No 回数
+        private const long C_IDX_TODOKE = 2;       //列No 届出日
+
+        private const long C_IDX_YK_STK = 3;       //列No 有給休暇 取得日
+        private const long C_IDX_YK_KBN = 4;       //列No 有給休暇 区分
+
+        private const long C_IDX_TK_STK = 3;       //列No 特別休 取得日
+        private const long C_IDX_TK_KBN = 5;       //列No 特別休 区分
+
+        private const long C_IDX_DK_STK = 4;       //列No 代休暇 取得日
+        private const long C_IDX_DK_KBN = 5;       //列No 代休暇 区分
+
         private const long C_IDX_FF_KBN1 = 3;      //列No 振出・振休 区分1
         private const long C_IDX_FF_STK1 = 4;      //列No 振出・振休 取得日1
         private const long C_IDX_FF_KBN2 = 5;      //列No 振出・振休 区分2
@@ -124,7 +136,41 @@ namespace houkokuChecker
                 return;
             }
 
-            loopLogic(btnCheck.Name, calCheckTaisyo.SelectedDate.Value);
+            foreach (string selMember in lbMember.SelectedItems)
+            {
+                //申請書Open
+                string sinseiFilePath =
+                    _rootPath + string.Format(SINSEI_FMT, selMember);
+
+                Dictionary<string, Dictionary<string, string>> dicSinsei =
+                    getExcelData(sinseiFilePath);
+
+                //申請書なしエラー
+                if (dicSinsei.Count == 0)
+                {
+                    MessageBox.Show(selMember + " の申請書を格納してください。:" + sinseiFilePath);
+                    continue;
+                }
+
+                //報告書Open
+                string hokokuFilePath =
+                    _rootPath + string.Format(HOUKOKU_FMT,
+                                              calSyukeiTaisyo.SelectedDate.Value.Year.ToString(),
+                                              calSyukeiTaisyo.SelectedDate.Value.Month.ToString("00"),
+                                              selMember);
+
+                Dictionary<string, Dictionary<string, string>> dicHoukoku =
+                    getExcelData(hokokuFilePath);
+
+                //報告書なしエラー
+                if (dicHoukoku.Count == 0)
+                {
+                    MessageBox.Show(selMember + " の報告書を格納してください。:" + hokokuFilePath);
+                    continue;
+                }
+
+                checkMain(dicSinsei, dicHoukoku, calSyukeiTaisyo.SelectedDate.Value);
+            }
 
             MessageBox.Show("処理が完了しました！");
 
@@ -168,7 +214,7 @@ namespace houkokuChecker
                 if (dicHoukoku.Count == 0)
                 {
                     MessageBox.Show(selMember + " の報告書を格納してください。:" + hokokuFilePath);
-                    return;
+                    continue;
                 }
 
                 syukeiMain(dicHoukoku, calSyukeiTaisyo.SelectedDate.Value);
@@ -209,7 +255,7 @@ namespace houkokuChecker
                 if (dicSinsei.Count == 0)
                 {
                     MessageBox.Show(selMember + " の申請書を格納してください。:" + sinseiFilePath);
-                    return;
+                    continue;
                 }
 
                 sinseiKakuninMain(dicSinsei);
@@ -232,81 +278,13 @@ namespace houkokuChecker
         }
 
         /// <summary>
-        /// 申請、報告書取り込み
-        /// </summary>
-        /// <param name="btnName"></param>
-        /// <returns></returns>
-        private bool loopLogic(string btnName, DateTime selDate = new DateTime())
-        {
-            Microsoft.Office.Interop.Excel.Application xlsSinsei
-                = new Microsoft.Office.Interop.Excel.Application();
-            Microsoft.Office.Interop.Excel.Application xlsHokoku
-                = new Microsoft.Office.Interop.Excel.Application();
-            Microsoft.Office.Interop.Excel.Workbook wrkBookSinsei = null;
-            Microsoft.Office.Interop.Excel.Workbook wrkBookHokoku = null;
-
-            foreach (string selMember in lbMember.SelectedItems)
-            {
-                try
-                {
-                    //申請書Open
-                    string sinseiFilePath =
-                        _rootPath + string.Format(SINSEI_FMT, selMember);
-
-                    wrkBookSinsei = xlsSinsei.Workbooks.Open(sinseiFilePath);
-
-                    //報告書Open
-                    string hokokuFilePath =
-                        _rootPath + string.Format(HOUKOKU_FMT,
-                                                  selDate.Year.ToString(),
-                                                  selDate.Month.ToString("00"),
-                                                  selMember);
-
-                    //報告書なしエラー
-                    if (File.Exists(hokokuFilePath) == false)
-                    {
-                        MessageBox.Show(selMember + " の報告書を格納してください。:" + hokokuFilePath);
-
-                        //return false;
-                    }
-                    else
-                    {
-                        wrkBookHokoku = xlsHokoku.Workbooks.Open(hokokuFilePath);
-                    }
-
-
-                    //チェック
-                    if (btnCheck.Name.Equals(btnName))
-                    {
-                        checkMain(wrkBookSinsei, wrkBookHokoku, selDate);
-                    }
-                }
-                finally
-                {
-                    //Close
-                    if (wrkBookSinsei != null)
-                    {
-                        wrkBookSinsei.Close(false);
-                    }
-                    if (wrkBookHokoku != null)
-                    {
-                        wrkBookHokoku.Close(false);
-                    }
-                }
-            }
-
-            return true;
-
-        }
-
-        /// <summary>
         /// 報告書チェックメイン
         /// </summary>
         /// <param name="sinseiBook"></param>
         /// <param name="houkokuBook"></param>
         private void checkMain(
-            Microsoft.Office.Interop.Excel.Workbook sinseiBook,
-            Microsoft.Office.Interop.Excel.Workbook houkokuBook,
+            Dictionary<string, Dictionary<string, string>> sinseiBook,
+            Dictionary<string, Dictionary<string, string>> houkokuBook,
             DateTime selDate)
         {
 
@@ -317,7 +295,7 @@ namespace houkokuChecker
             //報告情報チェック
 
             // NGチェック
-            Dictionary<string, string> dicHoukokuAlldata = getAllData(houkokuBook)[0];
+            Dictionary<string, string> dicHoukokuAlldata = houkokuBook["社員"];
 
             foreach (KeyValuePair<string, string> hitData in dicHoukokuAlldata.Where(p => p.Value == ("NG")))
             {
@@ -481,101 +459,650 @@ namespace houkokuChecker
 
             //申請情報解析
 
+            //ブック毎にループ
             foreach (Dictionary<string, string> dicSheet in dicSinsei.Values)
             {
-                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Contains("振出・振休")))
-                {
-                    long[] furiTitleAd = splitAdress(hitData.Key);
+                #region 有給休暇の解析
 
-                    for (int i = 2; i < 100; i++)
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Equals("有給休暇")))
+                {
+                    long[] furiTitleAd = splitAdress(hitData.Key);  //解析対象タイトルセル
+
+                    //タイトルセルの次の行から解析開始。
+                    for (int i = 8; i < 500; i++)
                     {
                         long rowBase = furiTitleAd[0] + i;
 
-                        //回数が空だったら次のセクションへ
-                        if (dicSheet.ContainsKey(createAdress(rowBase, 1)) == false ||
-                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, 1)]))
+                        //「届出日」が空だったら終了
+                        if (dicSheet.ContainsKey(createAdress(rowBase, C_IDX_TODOKE)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, C_IDX_TODOKE)]))
                         {
                             break;
                         }
 
-                        //区分１が空だったら次の行へ
+                        //行情報を取得
+                        string ykStk = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
+                            "yyyy/MM/dd H:mm:ss",
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykKbn = dicSheet[createAdress(rowBase, C_IDX_YK_KBN)];
+
+                        //「区分」を判定
+                        if (ykKbn.Contains("取消"))
+                        {
+                            string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
+
+                            //取り消し申請の場合
+                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            {
+                                if (ykStk.Equals(rowVal["対象日"]) &&
+                                    ykKbnBase.Equals(rowVal["その1,2"]))
+                                {
+                                    //消す
+                                    _dtSinsei.Rows.Remove(rowVal);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            //通常申請
+                            DataRow drYK = _dtSinsei.NewRow();
+                            drYK["氏名"] = dicSheet["3,8"];
+                            drYK["対象日"] = ykStk;
+                            drYK["その1,2"] = ykKbn;
+                            _dtSinsei.Rows.Add(drYK);
+                        }
+                    }
+                }
+
+                #endregion
+
+                #region 病気有給休暇の解析
+
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Equals("病気有給休暇")))
+                {
+                    long[] furiTitleAd = splitAdress(hitData.Key);  //解析対象タイトルセル
+
+                    //タイトルセルの次の行から解析開始。
+                    for (int i = 2; i < 500; i++)
+                    {
+                        long rowBase = furiTitleAd[0] + i;
+
+                        //「届出日」が空だったら終了
+                        if (dicSheet.ContainsKey(createAdress(rowBase, C_IDX_TODOKE)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, C_IDX_TODOKE)]))
+                        {
+                            break;
+                        }
+
+                        //行情報を取得
+                        string ykStk = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
+                            "yyyy/MM/dd H:mm:ss",
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykKbn = string.Format("病{0}", dicSheet[createAdress(rowBase, C_IDX_YK_KBN)]);
+
+                        //「区分」を判定
+                        if (ykKbn.Contains("取消"))
+                        {
+                            string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
+
+                            //取り消し申請の場合
+                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            {
+                                if (ykStk.Equals(rowVal["対象日"]) &&
+                                    ykKbnBase.Equals(rowVal["その1,2"]))
+                                {
+                                    //消す
+                                    _dtSinsei.Rows.Remove(rowVal);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            //通常申請
+                            DataRow drYK = _dtSinsei.NewRow();
+                            drYK["氏名"] = dicSheet["3,8"];
+                            drYK["対象日"] = ykStk;
+                            drYK["その1,2"] = ykKbn;
+                            _dtSinsei.Rows.Add(drYK);
+                        }
+                    }
+                }
+
+                #endregion
+
+                #region 特別有休の解析
+
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Equals("特別有休")))
+                {
+                    long[] furiTitleAd = splitAdress(hitData.Key);  //解析対象タイトルセル
+
+                    //タイトルセルの次の行から解析開始。
+                    for (int i = 2; i < 500; i++)
+                    {
+                        long rowBase = furiTitleAd[0] + i;
+
+                        //「届出日」が空だったら終了
+                        if (dicSheet.ContainsKey(createAdress(rowBase, C_IDX_TODOKE)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, C_IDX_TODOKE)]))
+                        {
+                            break;
+                        }
+
+                        //行情報を取得
+                        string ykStk = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_TK_STK)],
+                            "yyyy/MM/dd H:mm:ss",
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykKbn = string.Format("特有{0}", dicSheet[createAdress(rowBase, C_IDX_TK_KBN)]);
+
+                        //「区分」を判定
+                        if (ykKbn.Contains("取消"))
+                        {
+                            string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
+
+                            //取り消し申請の場合
+                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            {
+                                if (ykStk.Equals(rowVal["対象日"]) &&
+                                    ykKbnBase.Equals(rowVal["その1,2"]))
+                                {
+                                    //消す
+                                    _dtSinsei.Rows.Remove(rowVal);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            //通常申請
+                            DataRow drYK = _dtSinsei.NewRow();
+                            drYK["氏名"] = dicSheet["3,8"];
+                            drYK["対象日"] = ykStk;
+                            drYK["その1,2"] = ykKbn;
+                            _dtSinsei.Rows.Add(drYK);
+                        }
+                    }
+                }
+
+                #endregion
+
+                //特別有休（連日）の解析　→自分で見てと通知だけする
+
+                #region 特別無休の解析
+
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Equals("特別無休")))
+                {
+                    long[] furiTitleAd = splitAdress(hitData.Key);  //解析対象タイトルセル
+
+                    //タイトルセルの次の行から解析開始。
+                    for (int i = 2; i < 500; i++)
+                    {
+                        long rowBase = furiTitleAd[0] + i;
+
+                        //「届出日」が空だったら終了
+                        if (dicSheet.ContainsKey(createAdress(rowBase, C_IDX_TODOKE)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, C_IDX_TODOKE)]))
+                        {
+                            break;
+                        }
+
+                        //行情報を取得
+                        string ykStk = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_TK_STK)],
+                            "yyyy/MM/dd H:mm:ss",
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykKbn = string.Format("特無{0}", dicSheet[createAdress(rowBase, C_IDX_TK_KBN)]);
+
+                        //「区分」を判定
+                        if (ykKbn.Contains("取消"))
+                        {
+                            string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
+
+                            //取り消し申請の場合
+                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            {
+                                if (ykStk.Equals(rowVal["対象日"]) &&
+                                    ykKbnBase.Equals(rowVal["その1,2"]))
+                                {
+                                    //消す
+                                    _dtSinsei.Rows.Remove(rowVal);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            //通常申請
+                            DataRow drYK = _dtSinsei.NewRow();
+                            drYK["氏名"] = dicSheet["3,8"];
+                            drYK["対象日"] = ykStk;
+                            drYK["その1,2"] = ykKbn;
+                            _dtSinsei.Rows.Add(drYK);
+                        }
+                    }
+                }
+
+                #endregion
+
+                //特別無休（連日）の解析　→自分で見てと通知だけする
+
+                #region 振出・振休の解析
+
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Contains("振出・振休")))
+                {
+
+                    long[] furiTitleAd = splitAdress(hitData.Key);  //解析対象タイトルセル
+
+                    //タイトルセルの次の行から解析開始。
+                    for (int i = 2; i < 500; i++)
+                    {
+                        long rowBase = furiTitleAd[0] + i;
+
+                        //「回数」が空だったら次のタイトルセルへ
+                        if (dicSheet.ContainsKey(createAdress(rowBase, C_IDX_KAISU)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, C_IDX_KAISU)]))
+                        {
+                            break;
+                        }
+
+                        //「区分１」が空だったら次の行へ
                         string ffKbn1 = dicSheet[createAdress(rowBase, C_IDX_FF_KBN1)];
                         if (string.IsNullOrWhiteSpace(ffKbn1))
                         {
                             continue;
                         }
 
-                        string ffStk1 = DateTime.ParseExact(dicSheet[createAdress(rowBase, C_IDX_FF_STK1)], "yyyy/MM/dd H:mm:ss", CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        //行情報を取得
+                        string ffStk1 = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_FF_STK1)], 
+                            "yyyy/MM/dd H:mm:ss", 
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
                         string ffKbn2 = dicSheet[createAdress(rowBase, C_IDX_FF_KBN2)];
-                        string ffStk2 = DateTime.ParseExact(dicSheet[createAdress(rowBase, C_IDX_FF_STK2)], "yyyy/MM/dd H:mm:ss", CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ffStk2 = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_FF_STK2)], 
+                            "yyyy/MM/dd H:mm:ss", 
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
 
+                        //「区分1」を判定
                         switch (ffKbn1)
                         {
                             case "振出":
                             case "振休":
-                                if ("振休".Equals(ffKbn2) || "振出".Equals(ffKbn2))
-                                {
-                                    DataRow dr = _dtSinsei.NewRow();
-                                    dr["氏名"] = dicSheet["3,8"];
-                                    dr["対象日"] = ffStk1;
-                                    dr["出休"] = ffKbn1;
-                                    dr["出休日付"] = ffStk2;
-                                    _dtSinsei.Rows.Add(dr);
 
-                                    dr = _dtSinsei.NewRow();
-                                    dr["氏名"] = dicSheet["3,8"];
-                                    dr["対象日"] = ffStk2;
-                                    dr["出休"] = ffKbn2;
-                                    dr["出休日付"] = ffStk1;
-                                    _dtSinsei.Rows.Add(dr);
-
-                                }
-                                else if ("振休訂正".Equals(ffKbn2) || "振出訂正".Equals(ffKbn2))
+                                switch (ffKbn2)
                                 {
-                                    for (int p = 0; p < _dtSinsei.Rows.Count; p++)
-                                    {
-                                        DataRow rowVal = _dtSinsei.Rows[p];
-                                        if (ffStk1.Equals(rowVal["出休日付"]))
+                                    case "振休":
+                                    case "振出":
+                                        //振出 → 振休
+                                        //振休 → 振休
+
+                                        // x/x　「振出」 (y/y(振休日))
+                                        DataRow dr1 = _dtSinsei.NewRow();
+                                        dr1["氏名"] = dicSheet["3,8"];
+                                        dr1["対象日"] = ffStk1;
+                                        dr1["出休"] = ffKbn1;
+                                        dr1["出休日付"] = ffStk2;
+                                        dr1["元申請日"] = ffStk1;
+                                        _dtSinsei.Rows.Add(dr1);
+
+                                        // y/y　「振休」 (x/x(振出日))
+                                        dr1 = _dtSinsei.NewRow();
+                                        dr1["氏名"] = dicSheet["3,8"];
+                                        dr1["対象日"] = ffStk2;
+                                        dr1["出休"] = ffKbn2;
+                                        dr1["出休日付"] = ffStk1;
+                                        dr1["元申請日"] = ffStk2;
+                                        _dtSinsei.Rows.Add(dr1);
+
+                                        break;
+
+                                    case "振休訂正":
+                                    case "振出訂正":
+                                        //振出 → 振休訂正
+                                        //振休 → 振出訂正
+                                        // y/y　「振休」 (x/x(振出日))　→ y/y　「振休訂正」 (y'/y'(訂正振休日))　
+                                        foreach (DataRow rowVal in _dtSinsei.Rows)
                                         {
-                                            DataRow dr = _dtSinsei.NewRow();
-                                            dr["氏名"] = rowVal["氏名"];
-                                            dr["対象日"] = rowVal["対象日"];
-                                            dr["訂正"] = ffKbn2;
-                                            dr["訂正日付"] = ffStk2;
-                                            _dtSinsei.Rows.Add(dr);
+                                            if (ffStk1.Equals(rowVal["出休日付"]) &&
+                                                ffStk1.Equals(rowVal["元申請日"]))
+                                            {
+                                                //訂正書換
+                                                DataRow dr21 = _dtSinsei.NewRow();
+                                                dr21["氏名"] = rowVal["氏名"];
+                                                dr21["対象日"] = rowVal["対象日"];
+                                                dr21["訂正"] = ffKbn2;
+                                                dr21["訂正日付"] = ffStk2;
+                                                dr21["元申請日"] = rowVal["元申請日"];
+                                                _dtSinsei.Rows.Add(dr21);
 
-                                            _dtSinsei.Rows.Remove(rowVal);
+                                                //消す
+                                                _dtSinsei.Rows.Remove(rowVal);
 
-                                            break;
+                                                break;
+                                            }
                                         }
-                                    }
-                                    DataRow dr2 = _dtSinsei.NewRow();
-                                    dr2["氏名"] = dicSheet["3,8"];
-                                    dr2["対象日"] = ffStk2;
-                                    dr2["出休"] = ffKbn2.Substring(0, 2);
-                                    dr2["出休日付"] = ffStk1;
-                                    _dtSinsei.Rows.Add(dr2);
 
-                                }
-                                else
-                                {
-                                    //取消
+                                        // y'/y' 「振休」 (x/x(振出日))
+                                        DataRow dr22 = _dtSinsei.NewRow();
+                                        dr22["氏名"] = dicSheet["3,8"];
+                                        dr22["対象日"] = ffStk2;
+                                        dr22["出休"] = ffKbn2.Substring(0, 2);
+                                        dr22["出休日付"] = ffStk1;
+                                        dr22["元申請日"] = ffStk1;
+                                        _dtSinsei.Rows.Add(dr22);
+
+                                        break;
+
+                                    //振出 → 振出取消　はNG
+                                    //振出 → 振休取消　はNG
+                                    //振休 → 振出取消　はNG
+                                    //振休 → 振休取消　はNG
+
                                 }
                                 break;
 
                             case "振出取消":
-                                //振休取消
-
-                                break;
-
                             case "振休取消":
-                                //振出取消
+
+                                //振出取消 → 振休取消
+                                //振休取消 → 振出取消
+                                foreach (DataRow rowVal in _dtSinsei.Rows)
+                                {
+                                    if (ffStk1.Equals(rowVal["元申請日"]) ||
+                                        ffStk2.Equals(rowVal["元申請日"]))
+                                    {
+                                        // 削除
+                                        _dtSinsei.Rows.Remove(rowVal);
+                                    }
+                                }
 
                                 break;
+
+                            //振休訂正取消は無視。振休訂正すればいいじゃん。
+
                         }
                     }
+                }
 
-                };
+                #endregion
+
+                #region 休日出勤の解析
+
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Equals("休日出勤")))
+                {
+                    long[] furiTitleAd = splitAdress(hitData.Key);  //解析対象タイトルセル
+
+                    //タイトルセルの次の行から解析開始。
+                    for (int i = 2; i < 500; i++)
+                    {
+                        long rowBase = furiTitleAd[0] + i;
+
+                        //「届出日」が空だったら終了
+                        if (dicSheet.ContainsKey(createAdress(rowBase, C_IDX_TODOKE)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, C_IDX_TODOKE)]))
+                        {
+                            break;
+                        }
+
+                        //行情報を取得
+                        string ykStk = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
+                            "yyyy/MM/dd H:mm:ss",
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykKbn = dicSheet[createAdress(rowBase, C_IDX_YK_KBN)];
+
+                        //「区分」を判定
+                        if (ykKbn.Contains("取消"))
+                        {
+                            string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
+
+                            //取り消し申請の場合
+                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            {
+                                if (ykStk.Equals(rowVal["対象日"]) &&
+                                    ykKbnBase.Equals(rowVal["その1,2"]))
+                                {
+                                    //消す
+                                    _dtSinsei.Rows.Remove(rowVal);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            //通常申請
+                            DataRow drYK = _dtSinsei.NewRow();
+                            drYK["氏名"] = dicSheet["3,8"];
+                            drYK["対象日"] = ykStk;
+                            drYK["その1,2"] = ykKbn;
+                            _dtSinsei.Rows.Add(drYK);
+                        }
+                    }
+                }
+
+                #endregion
+
+                #region 代休暇の解析
+
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Equals("代休暇")))
+                {
+                    long[] furiTitleAd = splitAdress(hitData.Key);  //解析対象タイトルセル
+
+                    //タイトルセルの次の行から解析開始。
+                    for (int i = 2; i < 500; i++)
+                    {
+                        long rowBase = furiTitleAd[0] + i;
+
+                        //「届出日」が空だったら終了
+                        if (dicSheet.ContainsKey(createAdress(rowBase, C_IDX_TODOKE)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, C_IDX_TODOKE)]))
+                        {
+                            break;
+                        }
+
+                        //行情報を取得
+                        string ykStk = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_DK_STK)],
+                            "yyyy/MM/dd H:mm:ss",
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykKbn = dicSheet[createAdress(rowBase, C_IDX_DK_KBN)];
+
+                        //「区分」を判定
+                        if (ykKbn.Contains("取消"))
+                        {
+                            string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
+
+                            //取り消し申請の場合
+                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            {
+                                if (ykStk.Equals(rowVal["対象日"]) &&
+                                    ykKbnBase.Equals(rowVal["その1,2"]))
+                                {
+                                    //消す
+                                    _dtSinsei.Rows.Remove(rowVal);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            //通常申請
+                            DataRow drYK = _dtSinsei.NewRow();
+                            drYK["氏名"] = dicSheet["3,8"];
+                            drYK["対象日"] = ykStk;
+                            drYK["その1,2"] = ykKbn;
+                            _dtSinsei.Rows.Add(drYK);
+                        }
+                    }
+                }
+
+                #endregion
+
+                #region 遅刻・早退・外出の解析
+
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Equals("遅刻・早退・外出")))
+                {
+                    long[] furiTitleAd = splitAdress(hitData.Key);  //解析対象タイトルセル
+
+                    //タイトルセルの次の行から解析開始。
+                    for (int i = 2; i < 500; i++)
+                    {
+                        long rowBase = furiTitleAd[0] + i;
+
+                        //「届出日」が空だったら終了
+                        if (dicSheet.ContainsKey(createAdress(rowBase, C_IDX_TODOKE)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, C_IDX_TODOKE)]))
+                        {
+                            break;
+                        }
+
+                        //行情報を取得
+                        string ykStk = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
+                            "yyyy/MM/dd H:mm:ss",
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykKbn = dicSheet[createAdress(rowBase, C_IDX_YK_KBN)];
+
+                        //「区分」を判定
+                        if (ykKbn.Contains("取消"))
+                        {
+                            string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
+
+                            //取り消し申請の場合
+                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            {
+                                if (ykStk.Equals(rowVal["対象日"]) &&
+                                    ykKbnBase.Equals(rowVal["遅刻・早退・外出"]))
+                                {
+                                    //消す
+                                    _dtSinsei.Rows.Remove(rowVal);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            //通常申請
+                            DataRow drYK = _dtSinsei.NewRow();
+                            drYK["氏名"] = dicSheet["3,8"];
+                            drYK["対象日"] = ykStk;
+                            drYK["遅刻・早退・外出"] = ykKbn;
+                            _dtSinsei.Rows.Add(drYK);
+                        }
+                    }
+                }
+
+                #endregion
+
+                #region 欠勤の解析
+
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Equals("欠勤")))
+                {
+                    long[] furiTitleAd = splitAdress(hitData.Key);  //解析対象タイトルセル
+
+                    //タイトルセルの次の行から解析開始。
+                    for (int i = 2; i < 500; i++)
+                    {
+                        long rowBase = furiTitleAd[0] + i;
+
+                        //「届出日」が空だったら終了
+                        if (dicSheet.ContainsKey(createAdress(rowBase, C_IDX_TODOKE)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, C_IDX_TODOKE)]))
+                        {
+                            break;
+                        }
+
+                        //行情報を取得
+                        string ykStk = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
+                            "yyyy/MM/dd H:mm:ss",
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykKbn = dicSheet[createAdress(rowBase, C_IDX_YK_KBN)];
+
+                        //「区分」を判定
+                        if (ykKbn.Contains("取消"))
+                        {
+                            string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
+
+                            //取り消し申請の場合
+                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            {
+                                if (ykStk.Equals(rowVal["対象日"]) &&
+                                    ykKbnBase.Equals(rowVal["その1,2"]))
+                                {
+                                    //消す
+                                    _dtSinsei.Rows.Remove(rowVal);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            //通常申請
+                            DataRow drYK = _dtSinsei.NewRow();
+                            drYK["氏名"] = dicSheet["3,8"];
+                            drYK["対象日"] = ykStk;
+                            drYK["その1,2"] = ykKbn;
+                            _dtSinsei.Rows.Add(drYK);
+                        }
+                    }
+                }
+
+                #endregion
+
+                //欠勤（連日）の解析 →自分で見てと通知だけする
+
+                #region 時間外対応の解析
+
+                foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Equals("時間外対応")))
+                {
+                    long[] furiTitleAd = splitAdress(hitData.Key);  //解析対象タイトルセル
+
+                    //タイトルセルの次の行から解析開始。
+                    for (int i = 2; i < 500; i++)
+                    {
+                        long rowBase = furiTitleAd[0] + i;
+
+                        //「届出日」が空だったら終了
+                        if (dicSheet.ContainsKey(createAdress(rowBase, C_IDX_TODOKE)) == false ||
+                            string.IsNullOrWhiteSpace(dicSheet[createAdress(rowBase, C_IDX_TODOKE)]))
+                        {
+                            break;
+                        }
+
+                        //行情報を取得
+                        string ykStk = DateTime.ParseExact(
+                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
+                            "yyyy/MM/dd H:mm:ss",
+                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykKbn = dicSheet[createAdress(rowBase, C_IDX_YK_KBN)];
+
+                        //「区分」を判定
+                        if (ykKbn.Contains("取消"))
+                        {
+                            string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
+
+                            //取り消し申請の場合
+                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            {
+                                if (ykStk.Equals(rowVal["対象日"]) &&
+                                    ykKbnBase.Equals(rowVal["当番・緊急・計画"]))
+                                {
+                                    //消す
+                                    _dtSinsei.Rows.Remove(rowVal);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            //通常申請
+                            DataRow drYK = _dtSinsei.NewRow();
+                            drYK["氏名"] = dicSheet["3,8"];
+                            drYK["対象日"] = ykStk;
+                            drYK["当番・緊急・計画"] = ykKbn;
+                            _dtSinsei.Rows.Add(drYK);
+                        }
+                    }
+                }
+
+                #endregion
+
             }
 
             return;
@@ -643,8 +1170,6 @@ namespace houkokuChecker
         {
             return string.Format(AD_FMT, row, col);
         }
-
-
 
         /// <summary>
         /// Excel → Dictionary変換
