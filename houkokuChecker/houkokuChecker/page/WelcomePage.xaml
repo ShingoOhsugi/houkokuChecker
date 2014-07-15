@@ -1,0 +1,21 @@
+﻿<Page x:Class="houkokuChecker.WelcomePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      mc:Ignorable="d" 
+      xmlns:metro="http://schemas.codeplex.com/elysium"
+      xmlns:params="http://schemas.codeplex.com/elysium/params"
+      params:Design.Theme="Light"
+      params:Design.AccentBrush="{x:Static metro:AccentBrushes.Blue}"
+      params:Design.ContrastBrush="White"
+      d:DesignHeight="600" d:DesignWidth="1000"
+	  Title="WelcomePage">
+
+    <Grid Width="1000">
+        <StackPanel VerticalAlignment="Center" >
+            <TextBlock Text="ようこそ業務報告書チェックツールへ！&#xa;申請書と報告書を入れたフォルダを用意してください。" FontSize="36" HorizontalAlignment="Center"/>
+            <Button x:Name="btnStart" Content="開始" Click="btnStart_Click" Width="150" Margin="0,50,0,0"/>
+        </StackPanel>
+    </Grid>
+</Page>

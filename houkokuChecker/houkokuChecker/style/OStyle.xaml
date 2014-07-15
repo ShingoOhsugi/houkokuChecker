@@ -1,0 +1,70 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:params="http://schemas.codeplex.com/elysium/params">
+    
+    <SolidColorBrush x:Key ="BorderBrushNomal" Color="Gray" />
+
+    <!--
+            <SolidColorBrush x:Key ="TransparentBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="SemitransparentBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="BackgroundBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="ForegroundBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="HighlightBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="MiddleLightBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="LowlightBrush" Color="Aqua" />
+            <SolidColorBrush x:Key ="DisabledBrush" Color="Aqua" />
+            -->
+
+    <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Label}}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}" />
+        <Setter Property="Margin" Value="0,1,0,1"/>
+    </Style>
+
+    <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="Margin" Value="0,1,0,1"/>
+    </Style>
+
+    <Style TargetType="{x:Type DatePicker}" BasedOn="{StaticResource {x:Type DatePicker}}">
+        <Setter Property="BorderThickness" Value="{Binding RelativeSource={RelativeSource Self}, Path=(params:General.SemiBoldThickness), Mode=OneWay}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrushNomal}" />
+        <Setter Property="Foreground" Value="{StaticResource ContrastBrush}" />
+        <Setter Property="Margin" Value="0,1,0,1"/>
+    </Style>
+
+    <Style TargetType="{x:Type ListBox}" BasedOn="{StaticResource {x:Type ListBox}}">
+        <Setter Property="BorderThickness" Value="{Binding RelativeSource={RelativeSource Self}, Path=(params:General.SemiBoldThickness), Mode=OneWay}"/>
+        <Setter Property="Margin" Value="0,1,0,1"/>
+    </Style>
+
+    <Style TargetType="{x:Type DataGrid}" BasedOn="{StaticResource {x:Type DataGrid}}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource ContrastBrush}" />
+        <Setter Property="BorderThickness" Value="{Binding RelativeSource={RelativeSource Self}, Path=(params:General.SemiBoldThickness), Mode=OneWay}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrushNomal}" />
+        <Setter Property="VerticalGridLinesBrush" Value="{StaticResource BorderBrushNomal}" />
+        <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderBrushNomal}" />
+        <Setter Property="Margin" Value="0,1,0,1"/>
+    </Style>
+    <Style TargetType="{x:Type DataGridColumnHeader}" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+        <Setter Property="Padding" Value="3" />
+        <Setter Property="Background" Value="{StaticResource MiddleLightBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource ContrastBrush}" />
+    </Style>
+    <Style TargetType="{x:Type DataGridRowHeader}" BasedOn="{StaticResource {x:Type DataGridRowHeader}}">
+        <Setter Property="Padding" Value="3" />
+        <Setter Property="Background" Value="{StaticResource MiddleLightBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource ContrastBrush}" />
+    </Style>
+    <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource {x:Type DataGridCell}}">
+        <Setter Property="Padding" Value="3" />
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="{StaticResource BackgroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}" />
+    </Style>
+
+    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Margin" Value="0,3,0,3"/>
+    </Style>
+
+</ResourceDictionary>

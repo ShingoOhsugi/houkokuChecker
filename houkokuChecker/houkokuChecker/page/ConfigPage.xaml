@@ -1,0 +1,34 @@
+﻿<Page x:Class="houkokuChecker.ConfigPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      mc:Ignorable="d" 
+      xmlns:metro="http://schemas.codeplex.com/elysium"
+      xmlns:params="http://schemas.codeplex.com/elysium/params"
+      params:Design.Theme="Light"
+      params:Design.AccentBrush="{x:Static metro:AccentBrushes.Blue}"
+      params:Design.ContrastBrush="White"
+      d:DesignHeight="600" d:DesignWidth="1000"
+	  Title="ConfigPage" Loaded="Page_Loaded">
+
+    <Grid Width="1000" >
+        <StackPanel VerticalAlignment="Center" Width="380" >
+            <TextBlock Text="初期設定" FontSize="24" Margin="0, 0, 0, 10"/>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="社員コード" Width="130"/>
+                <TextBox x:Name="txtSyainCd" Width="100" TabIndex="1" MaxLength="5" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="社員名" Width="130"/>
+                <TextBox x:Name="txtSyainNm" Width="100" TabIndex="2" MaxLength="10" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="申請・報告書格納パス" Width="130"/>
+                <TextBox x:Name="txtRootPath" Width="200" TabIndex="3" />
+                <Button x:Name="btnOpenFile" Content="…" Click="btnOpenFile_Click" Width="30" MinWidth="0" Padding="0" BorderThickness="0" Margin="0" />
+            </StackPanel>
+            <Button x:Name="btnSettei" Content="設定" Click="btnSettei_Click" Width="150" Margin="0,30,0,0" />
+        </StackPanel>
+    </Grid>
+</Page>
