@@ -15,7 +15,7 @@
     <Grid Width="1000">
         <StackPanel VerticalAlignment="Center" >
             <TextBlock Text="ようこそ業務報告書チェックツールへ！&#xa;申請書と報告書を入れたフォルダを用意してください。" FontSize="36" HorizontalAlignment="Center"/>
-            <Button x:Name="btnStart" Content="開始" Click="btnStart_Click" Width="150" Margin="0,50,0,0"/>
+            <Button x:Name="btnStart" Content="開　始" Click="btnStart_Click" Width="150" Margin="0,50,0,0"/>
         </StackPanel>
     </Grid>
 </Page>

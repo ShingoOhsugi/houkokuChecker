@@ -493,8 +493,10 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
                             {
+                                DataRow rowVal = _dtSinsei.Rows[r];
+
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
@@ -548,8 +550,10 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
                             {
+                                DataRow rowVal = _dtSinsei.Rows[r];
+
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
@@ -603,8 +607,10 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
                             {
+                                DataRow rowVal = _dtSinsei.Rows[r];
+
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
@@ -660,8 +666,10 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
                             {
+                                DataRow rowVal = _dtSinsei.Rows[r];
+
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
@@ -761,8 +769,10 @@ namespace houkokuChecker
                                         //振出 → 振休訂正
                                         //振休 → 振出訂正
                                         // y/y　「振休」 (x/x(振出日))　→ y/y　「振休訂正」 (y'/y'(訂正振休日))　
-                                        foreach (DataRow rowVal in _dtSinsei.Rows)
+                                        for (int r = 0; r < _dtSinsei.Rows.Count; r++)
                                         {
+                                            DataRow rowVal = _dtSinsei.Rows[r];
+
                                             if (ffStk1.Equals(rowVal["出休日付"]) &&
                                                 ffStk1.Equals(rowVal["元申請日"]))
                                             {
@@ -806,8 +816,10 @@ namespace houkokuChecker
 
                                 //振出取消 → 振休取消
                                 //振休取消 → 振出取消
-                                foreach (DataRow rowVal in _dtSinsei.Rows)
+                                for (int r = 0; r < _dtSinsei.Rows.Count; r++ )
                                 {
+                                    DataRow rowVal = _dtSinsei.Rows[r];
+
                                     if (ffStk1.Equals(rowVal["元申請日"]) ||
                                         ffStk2.Equals(rowVal["元申請日"]))
                                     {
@@ -857,8 +869,10 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
                             {
+                                DataRow rowVal = _dtSinsei.Rows[r];
+
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
@@ -912,8 +926,10 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
                             {
+                                DataRow rowVal = _dtSinsei.Rows[r];
+
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
@@ -967,8 +983,10 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
                             {
+                                DataRow rowVal = _dtSinsei.Rows[r];
+
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["遅刻・早退・外出"]))
                                 {
@@ -1022,8 +1040,10 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
                             {
+                                DataRow rowVal = _dtSinsei.Rows[r];
+
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
@@ -1079,8 +1099,10 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            foreach (DataRow rowVal in _dtSinsei.Rows)
+                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
                             {
+                                DataRow rowVal = _dtSinsei.Rows[r];
+
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["当番・緊急・計画"]))
                                 {
