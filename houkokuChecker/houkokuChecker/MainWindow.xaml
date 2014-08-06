@@ -4,8 +4,10 @@
         xmlns:metro="http://schemas.codeplex.com/elysium"
         Title="業務報告書チェックツール" Loaded="Window_Loaded_1" WindowStartupLocation="CenterScreen" Width="1000" Height="600" >
 
-    <Viewbox>
-        <Frame x:Name="fmMain" NavigationUIVisibility="Hidden" />
-    </Viewbox>
-    
+    <Grid>
+        <Viewbox>
+            <Frame x:Name="fmMain" NavigationUIVisibility="Hidden" />
+        </Viewbox>
+        <WebBrowser x:Name="wbMain" Visibility="Collapsed"/>
+    </Grid>
 </metro:Window>

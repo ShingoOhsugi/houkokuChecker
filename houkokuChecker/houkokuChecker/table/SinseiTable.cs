@@ -11,6 +11,7 @@ namespace houkokuChecker
     {
         public SinseiTable()
         {
+            Columns.Add("社員コード", typeof(int));
             Columns.Add("氏名", typeof(string));
             Columns.Add("対象日", typeof(string));
             Columns.Add("遅刻・早退・外出", typeof(string));

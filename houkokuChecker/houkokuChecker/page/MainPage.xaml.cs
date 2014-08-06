@@ -57,9 +57,6 @@ namespace houkokuChecker
 
         private const long C_IDX_HIDUKE_START = 21;      //列No 「1日」のセル
 
-        SyukeiTable _dtKekka;
-        SinseiTable _dtSinsei;
-
         public MainPage()
         {
             InitializeComponent();
@@ -155,8 +152,8 @@ namespace houkokuChecker
                 //報告書Open
                 string hokokuFilePath =
                     _rootPath + string.Format(HOUKOKU_FMT,
-                                              calSyukeiTaisyo.SelectedDate.Value.Year.ToString(),
-                                              calSyukeiTaisyo.SelectedDate.Value.Month.ToString("00"),
+                                              calCheckTaisyo.SelectedDate.Value.Year.ToString(),
+                                              calCheckTaisyo.SelectedDate.Value.Month.ToString("00"),
                                               selMember);
 
                 Dictionary<string, Dictionary<string, string>> dicHoukoku =
@@ -169,7 +166,8 @@ namespace houkokuChecker
                     continue;
                 }
 
-                checkMain(dicSinsei, dicHoukoku, calSyukeiTaisyo.SelectedDate.Value);
+                //チェック結果追記
+                txtCheckResult.Text += CheckMain(dicSinsei, dicHoukoku, calCheckTaisyo.SelectedDate.Value);
             }
 
             MessageBox.Show("処理が完了しました！");
@@ -184,7 +182,7 @@ namespace houkokuChecker
         private void btnSyukei_Click(object sender, RoutedEventArgs e)
         {
             dgSyukeiResult.ItemsSource = null;
-            _dtKekka = new SyukeiTable();
+            SyukeiTable dtKekka = new SyukeiTable();
 
             if (lbMember.SelectedItems.Count == 0)
             {
@@ -217,10 +215,11 @@ namespace houkokuChecker
                     continue;
                 }
 
-                syukeiMain(dicHoukoku, calSyukeiTaisyo.SelectedDate.Value);
+                //集計データ取得
+                dtKekka.Merge(GetSyukeiData(dicHoukoku, calSyukeiTaisyo.SelectedDate.Value));
             }
 
-            dgSyukeiResult.ItemsSource = _dtKekka.DefaultView;
+            dgSyukeiResult.ItemsSource = dtKekka.DefaultView;
 
             MessageBox.Show("処理が完了しました！");
 
@@ -234,7 +233,7 @@ namespace houkokuChecker
         private void btnSinseiKaku_Click(object sender, RoutedEventArgs e)
         {
             dgSinseiResult.ItemsSource = null;
-            _dtSinsei = new SinseiTable();
+            SinseiTable dtSinsei = new SinseiTable();
 
             if (lbMember.SelectedItems.Count == 0)
             {
@@ -258,10 +257,14 @@ namespace houkokuChecker
                     continue;
                 }
 
-                sinseiKakuninMain(dicSinsei);
+                //申請情報ロード
+                dtSinsei.Merge(GetSinseiData(dicSinsei), true);
             }
 
-            dgSinseiResult.ItemsSource = _dtSinsei.DefaultView;
+            //ソート
+            dtSinsei.DefaultView.Sort = "対象日";
+
+            dgSinseiResult.ItemsSource = dtSinsei.DefaultView;
 
             MessageBox.Show("処理が完了しました！");
 
@@ -282,25 +285,28 @@ namespace houkokuChecker
         /// </summary>
         /// <param name="sinseiBook"></param>
         /// <param name="houkokuBook"></param>
-        private void checkMain(
+        private string CheckMain(
             Dictionary<string, Dictionary<string, string>> sinseiBook,
             Dictionary<string, Dictionary<string, string>> houkokuBook,
             DateTime selDate)
         {
+            string result = string.Empty;
 
             //申請情報取込
-
-
+            SinseiTable sinseiData = GetSinseiData(sinseiBook);
 
             //報告情報チェック
 
             // NGチェック
             Dictionary<string, string> dicHoukokuAlldata = houkokuBook["社員"];
+            int syainCode = int.Parse(dicHoukokuAlldata["4,3"]);
+            string syainName = dicHoukokuAlldata["4,7"];
 
             foreach (KeyValuePair<string, string> hitData in dicHoukokuAlldata.Where(p => p.Value == ("NG")))
             {
                 long[] hitAd = splitAdress(hitData.Key);
-                txtCheckResult.Text += string.Format("NGがあります。 行No: {0} 列No: {1} \n", hitAd[0], hitAd[1]);
+                result += 
+                    string.Format("{0} NGがあります。 行No: {1} 列No: {2} \n", syainName, hitAd[0], hitAd[1]);
             };
 
             // 指定期間に限定
@@ -310,9 +316,14 @@ namespace houkokuChecker
                 // 休日必須チェック
 
                 // 申請チェック
+                foreach(DataRow dr in sinseiData.Select(string.Format("社員コード = {0} AND ", syainCode)))
+                {
+
+                }
+
             }
 
-            return;
+            return result;
         }
 
         /// <summary>
@@ -320,10 +331,11 @@ namespace houkokuChecker
         /// </summary>
         /// <param name="dicSinsei"></param>
         /// <param name="selDate"></param>
-        private void syukeiMain(
+        private SyukeiTable GetSyukeiData(
             Dictionary<string, Dictionary<string, string>> dicHoukoku,
             DateTime selDate)
         {
+            SyukeiTable locKekka = new SyukeiTable();
 
             //報告情報解析
             Dictionary<string, string> dicHoukokuAlldata = dicHoukoku["社員"];
@@ -433,7 +445,7 @@ namespace houkokuChecker
 
             //バインド用結果設定
             //Math.Floor(totalKihon.TotalHours).ToString("0") + totalKihon.ToString(@"\:mm");
-            DataRow drKekka = _dtKekka.NewRow();
+            DataRow drKekka = locKekka.NewRow();
             drKekka["氏名"] = dicHoukokuAlldata["4,7"];
             TimeSpan tsTotal = totalKihon + totalMinasi + totalKojo + totalFTZan + totalSNZan + totalSOZan + totalKYZan;
             drKekka["総稼動"] = tsTotal.TotalHours.ToString("0.00");
@@ -445,23 +457,34 @@ namespace houkokuChecker
             drKekka["早朝稼働"] = totalSOZan.TotalHours.ToString("0.00");
             drKekka["法定休日稼働"] = totalKYZan.TotalHours.ToString("0.00");
             drKekka["作業内容"] = dicHoukokuAlldata["80,2"] + " : " + dicHoukokuAlldata["81,6"];
-            _dtKekka.Rows.Add(drKekka);
+            locKekka.Rows.Add(drKekka);
 
-            return;
+            return locKekka;
         }
 
         /// <summary>
-        /// 申請確認処理メイン
+        /// 申請書ロード
         /// </summary>
-        /// <param name="dicSinsei"></param>
-        private void sinseiKakuninMain(Dictionary<string, Dictionary<string, string>> dicSinsei)
+        /// <returns></returns>
+        private SinseiTable GetSinseiData(Dictionary<string, Dictionary<string, string>> dicSinsei)
         {
-
             //申請情報解析
+
+            SinseiTable locSinsei = new SinseiTable();
 
             //ブック毎にループ
             foreach (Dictionary<string, string> dicSheet in dicSinsei.Values)
             {
+                //社員コード、名前が入ってなかったらスキップ
+                if (dicSheet.ContainsKey("3,6") == false ||
+                    dicSheet.ContainsKey("3,8") == false )
+                {
+                    break;
+                }
+
+                int syainCode = int.Parse(dicSheet["3,6"]); // 社員コード
+                string syainName = dicSheet["3,8"]; // 社員名
+
                 #region 有給休暇の解析
 
                 foreach (KeyValuePair<string, string> hitData in dicSheet.Where(p => p.Value.Equals("有給休暇")))
@@ -493,26 +516,27 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
+                            for (int r = 0; r < locSinsei.Rows.Count; r++)
                             {
-                                DataRow rowVal = _dtSinsei.Rows[r];
+                                DataRow rowVal = locSinsei.Rows[r];
 
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
                                     //消す
-                                    _dtSinsei.Rows.Remove(rowVal);
+                                    locSinsei.Rows.Remove(rowVal);
                                 }
                             }
                         }
                         else
                         {
                             //通常申請
-                            DataRow drYK = _dtSinsei.NewRow();
-                            drYK["氏名"] = dicSheet["3,8"];
+                            DataRow drYK = locSinsei.NewRow();
+                            drYK["社員コード"] = syainCode;
+                            drYK["氏名"] = syainName;
                             drYK["対象日"] = ykStk;
                             drYK["その1,2"] = ykKbn;
-                            _dtSinsei.Rows.Add(drYK);
+                            locSinsei.Rows.Add(drYK);
                         }
                     }
                 }
@@ -550,26 +574,27 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
+                            for (int r = 0; r < locSinsei.Rows.Count; r++)
                             {
-                                DataRow rowVal = _dtSinsei.Rows[r];
+                                DataRow rowVal = locSinsei.Rows[r];
 
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
                                     //消す
-                                    _dtSinsei.Rows.Remove(rowVal);
+                                    locSinsei.Rows.Remove(rowVal);
                                 }
                             }
                         }
                         else
                         {
                             //通常申請
-                            DataRow drYK = _dtSinsei.NewRow();
-                            drYK["氏名"] = dicSheet["3,8"];
+                            DataRow drYK = locSinsei.NewRow();
+                            drYK["社員コード"] = syainCode;
+                            drYK["氏名"] = syainName;
                             drYK["対象日"] = ykStk;
                             drYK["その1,2"] = ykKbn;
-                            _dtSinsei.Rows.Add(drYK);
+                            locSinsei.Rows.Add(drYK);
                         }
                     }
                 }
@@ -607,26 +632,27 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
+                            for (int r = 0; r < locSinsei.Rows.Count; r++)
                             {
-                                DataRow rowVal = _dtSinsei.Rows[r];
+                                DataRow rowVal = locSinsei.Rows[r];
 
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
                                     //消す
-                                    _dtSinsei.Rows.Remove(rowVal);
+                                    locSinsei.Rows.Remove(rowVal);
                                 }
                             }
                         }
                         else
                         {
                             //通常申請
-                            DataRow drYK = _dtSinsei.NewRow();
-                            drYK["氏名"] = dicSheet["3,8"];
+                            DataRow drYK = locSinsei.NewRow();
+                            drYK["社員コード"] = syainCode;
+                            drYK["氏名"] = syainName;
                             drYK["対象日"] = ykStk;
                             drYK["その1,2"] = ykKbn;
-                            _dtSinsei.Rows.Add(drYK);
+                            locSinsei.Rows.Add(drYK);
                         }
                     }
                 }
@@ -666,26 +692,27 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
+                            for (int r = 0; r < locSinsei.Rows.Count; r++)
                             {
-                                DataRow rowVal = _dtSinsei.Rows[r];
+                                DataRow rowVal = locSinsei.Rows[r];
 
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
                                     //消す
-                                    _dtSinsei.Rows.Remove(rowVal);
+                                    locSinsei.Rows.Remove(rowVal);
                                 }
                             }
                         }
                         else
                         {
                             //通常申請
-                            DataRow drYK = _dtSinsei.NewRow();
-                            drYK["氏名"] = dicSheet["3,8"];
+                            DataRow drYK = locSinsei.NewRow();
+                            drYK["社員コード"] = syainCode;
+                            drYK["氏名"] = syainName;
                             drYK["対象日"] = ykStk;
                             drYK["その1,2"] = ykKbn;
-                            _dtSinsei.Rows.Add(drYK);
+                            locSinsei.Rows.Add(drYK);
                         }
                     }
                 }
@@ -722,13 +749,13 @@ namespace houkokuChecker
 
                         //行情報を取得
                         string ffStk1 = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_FF_STK1)], 
-                            "yyyy/MM/dd H:mm:ss", 
+                            dicSheet[createAdress(rowBase, C_IDX_FF_STK1)],
+                            "yyyy/MM/dd H:mm:ss",
                             CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
                         string ffKbn2 = dicSheet[createAdress(rowBase, C_IDX_FF_KBN2)];
                         string ffStk2 = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_FF_STK2)], 
-                            "yyyy/MM/dd H:mm:ss", 
+                            dicSheet[createAdress(rowBase, C_IDX_FF_STK2)],
+                            "yyyy/MM/dd H:mm:ss",
                             CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
 
                         //「区分1」を判定
@@ -745,22 +772,24 @@ namespace houkokuChecker
                                         //振休 → 振休
 
                                         // x/x　「振出」 (y/y(振休日))
-                                        DataRow dr1 = _dtSinsei.NewRow();
-                                        dr1["氏名"] = dicSheet["3,8"];
+                                        DataRow dr1 = locSinsei.NewRow();
+                                        dr1["社員コード"] = syainCode;
+                                        dr1["氏名"] = syainName;
                                         dr1["対象日"] = ffStk1;
                                         dr1["出休"] = ffKbn1;
                                         dr1["出休日付"] = ffStk2;
                                         dr1["元申請日"] = ffStk1;
-                                        _dtSinsei.Rows.Add(dr1);
+                                        locSinsei.Rows.Add(dr1);
 
                                         // y/y　「振休」 (x/x(振出日))
-                                        dr1 = _dtSinsei.NewRow();
-                                        dr1["氏名"] = dicSheet["3,8"];
+                                        dr1 = locSinsei.NewRow();
+                                        dr1["社員コード"] = syainCode;
+                                        dr1["氏名"] = syainName;
                                         dr1["対象日"] = ffStk2;
                                         dr1["出休"] = ffKbn2;
                                         dr1["出休日付"] = ffStk1;
                                         dr1["元申請日"] = ffStk2;
-                                        _dtSinsei.Rows.Add(dr1);
+                                        locSinsei.Rows.Add(dr1);
 
                                         break;
 
@@ -769,37 +798,39 @@ namespace houkokuChecker
                                         //振出 → 振休訂正
                                         //振休 → 振出訂正
                                         // y/y　「振休」 (x/x(振出日))　→ y/y　「振休訂正」 (y'/y'(訂正振休日))　
-                                        for (int r = 0; r < _dtSinsei.Rows.Count; r++)
+                                        for (int r = 0; r < locSinsei.Rows.Count; r++)
                                         {
-                                            DataRow rowVal = _dtSinsei.Rows[r];
+                                            DataRow rowVal = locSinsei.Rows[r];
 
                                             if (ffStk1.Equals(rowVal["出休日付"]) &&
                                                 ffStk1.Equals(rowVal["元申請日"]))
                                             {
                                                 //訂正書換
-                                                DataRow dr21 = _dtSinsei.NewRow();
+                                                DataRow dr21 = locSinsei.NewRow();
+                                                dr21["社員コード"] = rowVal["社員コード"];
                                                 dr21["氏名"] = rowVal["氏名"];
                                                 dr21["対象日"] = rowVal["対象日"];
                                                 dr21["訂正"] = ffKbn2;
                                                 dr21["訂正日付"] = ffStk2;
                                                 dr21["元申請日"] = rowVal["元申請日"];
-                                                _dtSinsei.Rows.Add(dr21);
+                                                locSinsei.Rows.Add(dr21);
 
                                                 //消す
-                                                _dtSinsei.Rows.Remove(rowVal);
+                                                locSinsei.Rows.Remove(rowVal);
 
                                                 break;
                                             }
                                         }
 
                                         // y'/y' 「振休」 (x/x(振出日))
-                                        DataRow dr22 = _dtSinsei.NewRow();
-                                        dr22["氏名"] = dicSheet["3,8"];
+                                        DataRow dr22 = locSinsei.NewRow();
+                                        dr22["社員コード"] = syainCode;
+                                        dr22["氏名"] = syainName;
                                         dr22["対象日"] = ffStk2;
                                         dr22["出休"] = ffKbn2.Substring(0, 2);
                                         dr22["出休日付"] = ffStk1;
                                         dr22["元申請日"] = ffStk1;
-                                        _dtSinsei.Rows.Add(dr22);
+                                        locSinsei.Rows.Add(dr22);
 
                                         break;
 
@@ -816,15 +847,15 @@ namespace houkokuChecker
 
                                 //振出取消 → 振休取消
                                 //振休取消 → 振出取消
-                                for (int r = 0; r < _dtSinsei.Rows.Count; r++ )
+                                for (int r = 0; r < locSinsei.Rows.Count; r++)
                                 {
-                                    DataRow rowVal = _dtSinsei.Rows[r];
+                                    DataRow rowVal = locSinsei.Rows[r];
 
                                     if (ffStk1.Equals(rowVal["元申請日"]) ||
                                         ffStk2.Equals(rowVal["元申請日"]))
                                     {
                                         // 削除
-                                        _dtSinsei.Rows.Remove(rowVal);
+                                        locSinsei.Rows.Remove(rowVal);
                                     }
                                 }
 
@@ -869,26 +900,27 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
+                            for (int r = 0; r < locSinsei.Rows.Count; r++)
                             {
-                                DataRow rowVal = _dtSinsei.Rows[r];
+                                DataRow rowVal = locSinsei.Rows[r];
 
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
                                     //消す
-                                    _dtSinsei.Rows.Remove(rowVal);
+                                    locSinsei.Rows.Remove(rowVal);
                                 }
                             }
                         }
                         else
                         {
                             //通常申請
-                            DataRow drYK = _dtSinsei.NewRow();
-                            drYK["氏名"] = dicSheet["3,8"];
+                            DataRow drYK = locSinsei.NewRow();
+                            drYK["社員コード"] = syainCode;
+                            drYK["氏名"] = syainName;
                             drYK["対象日"] = ykStk;
                             drYK["その1,2"] = ykKbn;
-                            _dtSinsei.Rows.Add(drYK);
+                            locSinsei.Rows.Add(drYK);
                         }
                     }
                 }
@@ -926,26 +958,27 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
+                            for (int r = 0; r < locSinsei.Rows.Count; r++)
                             {
-                                DataRow rowVal = _dtSinsei.Rows[r];
+                                DataRow rowVal = locSinsei.Rows[r];
 
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
                                     //消す
-                                    _dtSinsei.Rows.Remove(rowVal);
+                                    locSinsei.Rows.Remove(rowVal);
                                 }
                             }
                         }
                         else
                         {
                             //通常申請
-                            DataRow drYK = _dtSinsei.NewRow();
-                            drYK["氏名"] = dicSheet["3,8"];
+                            DataRow drYK = locSinsei.NewRow();
+                            drYK["社員コード"] = syainCode;
+                            drYK["氏名"] = syainName;
                             drYK["対象日"] = ykStk;
                             drYK["その1,2"] = ykKbn;
-                            _dtSinsei.Rows.Add(drYK);
+                            locSinsei.Rows.Add(drYK);
                         }
                     }
                 }
@@ -983,26 +1016,27 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
+                            for (int r = 0; r < locSinsei.Rows.Count; r++)
                             {
-                                DataRow rowVal = _dtSinsei.Rows[r];
+                                DataRow rowVal = locSinsei.Rows[r];
 
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["遅刻・早退・外出"]))
                                 {
                                     //消す
-                                    _dtSinsei.Rows.Remove(rowVal);
+                                    locSinsei.Rows.Remove(rowVal);
                                 }
                             }
                         }
                         else
                         {
                             //通常申請
-                            DataRow drYK = _dtSinsei.NewRow();
-                            drYK["氏名"] = dicSheet["3,8"];
+                            DataRow drYK = locSinsei.NewRow();
+                            drYK["社員コード"] = syainCode;
+                            drYK["氏名"] = syainName;
                             drYK["対象日"] = ykStk;
                             drYK["遅刻・早退・外出"] = ykKbn;
-                            _dtSinsei.Rows.Add(drYK);
+                            locSinsei.Rows.Add(drYK);
                         }
                     }
                 }
@@ -1040,26 +1074,27 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
+                            for (int r = 0; r < locSinsei.Rows.Count; r++)
                             {
-                                DataRow rowVal = _dtSinsei.Rows[r];
+                                DataRow rowVal = locSinsei.Rows[r];
 
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["その1,2"]))
                                 {
                                     //消す
-                                    _dtSinsei.Rows.Remove(rowVal);
+                                    locSinsei.Rows.Remove(rowVal);
                                 }
                             }
                         }
                         else
                         {
                             //通常申請
-                            DataRow drYK = _dtSinsei.NewRow();
-                            drYK["氏名"] = dicSheet["3,8"];
+                            DataRow drYK = locSinsei.NewRow();
+                            drYK["社員コード"] = syainCode;
+                            drYK["氏名"] = syainName;
                             drYK["対象日"] = ykStk;
                             drYK["その1,2"] = ykKbn;
-                            _dtSinsei.Rows.Add(drYK);
+                            locSinsei.Rows.Add(drYK);
                         }
                     }
                 }
@@ -1099,26 +1134,27 @@ namespace houkokuChecker
                             string ykKbnBase = ykKbn.Substring(0, ykKbn.Length - 2);
 
                             //取り消し申請の場合
-                            for (int r = 0; r < _dtSinsei.Rows.Count; r++)
+                            for (int r = 0; r < locSinsei.Rows.Count; r++)
                             {
-                                DataRow rowVal = _dtSinsei.Rows[r];
+                                DataRow rowVal = locSinsei.Rows[r];
 
                                 if (ykStk.Equals(rowVal["対象日"]) &&
                                     ykKbnBase.Equals(rowVal["当番・緊急・計画"]))
                                 {
                                     //消す
-                                    _dtSinsei.Rows.Remove(rowVal);
+                                    locSinsei.Rows.Remove(rowVal);
                                 }
                             }
                         }
                         else
                         {
                             //通常申請
-                            DataRow drYK = _dtSinsei.NewRow();
-                            drYK["氏名"] = dicSheet["3,8"];
+                            DataRow drYK = locSinsei.NewRow();
+                            drYK["社員コード"] = syainCode;
+                            drYK["氏名"] = syainName;
                             drYK["対象日"] = ykStk;
                             drYK["当番・緊急・計画"] = ykKbn;
-                            _dtSinsei.Rows.Add(drYK);
+                            locSinsei.Rows.Add(drYK);
                         }
                     }
                 }
@@ -1127,7 +1163,7 @@ namespace houkokuChecker
 
             }
 
-            return;
+            return locSinsei;
         }
 
         /// <summary>
