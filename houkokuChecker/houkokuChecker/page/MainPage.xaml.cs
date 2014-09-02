@@ -778,7 +778,14 @@ namespace houkokuChecker
                                         dr1["対象日"] = ffStk1;
                                         dr1["出休"] = ffKbn1;
                                         dr1["出休日付"] = ffStk2;
-                                        dr1["元申請日"] = ffStk1;
+                                        if (ffKbn1.Equals("振出"))
+                                        {
+                                            dr1["元申請日"] = ffStk1;
+                                        }
+                                        else
+                                        {
+                                            dr1["元申請日"] = ffStk2;
+                                        }
                                         locSinsei.Rows.Add(dr1);
 
                                         // y/y　「振休」 (x/x(振出日))
@@ -788,7 +795,14 @@ namespace houkokuChecker
                                         dr1["対象日"] = ffStk2;
                                         dr1["出休"] = ffKbn2;
                                         dr1["出休日付"] = ffStk1;
-                                        dr1["元申請日"] = ffStk2;
+                                        if (ffKbn1.Equals("振出"))
+                                        {
+                                            dr1["元申請日"] = ffStk1;
+                                        }
+                                        else
+                                        {
+                                            dr1["元申請日"] = ffStk2;
+                                        }
                                         locSinsei.Rows.Add(dr1);
 
                                         break;
