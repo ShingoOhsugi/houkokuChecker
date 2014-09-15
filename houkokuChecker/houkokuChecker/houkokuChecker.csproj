@@ -117,6 +117,7 @@
     <Compile Include="table\SyukeiTable.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="util\DatetimeUtil.cs" />
     <Compile Include="util\WebDav.cs" />
     <Page Include="page\MainPage.xaml">
       <Generator>MSBuild:Compile</Generator>

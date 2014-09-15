@@ -1,4 +1,5 @@
-﻿using System;
+﻿using houkokuChecker.util;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -504,10 +505,7 @@ namespace houkokuChecker
                         }
 
                         //行情報を取得
-                        string ykStk = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykStk = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_YK_STK)]).ToString("yyyy/MM/dd");
                         string ykKbn = dicSheet[createAdress(rowBase, C_IDX_YK_KBN)];
 
                         //「区分」を判定
@@ -562,10 +560,7 @@ namespace houkokuChecker
                         }
 
                         //行情報を取得
-                        string ykStk = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykStk = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_YK_STK)]).ToString("yyyy/MM/dd");
                         string ykKbn = string.Format("病{0}", dicSheet[createAdress(rowBase, C_IDX_YK_KBN)]);
 
                         //「区分」を判定
@@ -620,10 +615,7 @@ namespace houkokuChecker
                         }
 
                         //行情報を取得
-                        string ykStk = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_TK_STK)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykStk = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_TK_STK)]).ToString("yyyy/MM/dd");
                         string ykKbn = string.Format("特有{0}", dicSheet[createAdress(rowBase, C_IDX_TK_KBN)]);
 
                         //「区分」を判定
@@ -680,10 +672,7 @@ namespace houkokuChecker
                         }
 
                         //行情報を取得
-                        string ykStk = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_TK_STK)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykStk = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_TK_STK)]).ToString("yyyy/MM/dd");
                         string ykKbn = string.Format("特無{0}", dicSheet[createAdress(rowBase, C_IDX_TK_KBN)]);
 
                         //「区分」を判定
@@ -748,15 +737,9 @@ namespace houkokuChecker
                         }
 
                         //行情報を取得
-                        string ffStk1 = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_FF_STK1)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ffStk1 = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_FF_STK1)]).ToString("yyyy/MM/dd");
                         string ffKbn2 = dicSheet[createAdress(rowBase, C_IDX_FF_KBN2)];
-                        string ffStk2 = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_FF_STK2)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ffStk2 = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_FF_STK2)]).ToString("yyyy/MM/dd");
 
                         //「区分1」を判定
                         switch (ffKbn1)
@@ -902,10 +885,7 @@ namespace houkokuChecker
                         }
 
                         //行情報を取得
-                        string ykStk = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykStk = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_YK_STK)]).ToString("yyyy/MM/dd");
                         string ykKbn = dicSheet[createAdress(rowBase, C_IDX_YK_KBN)];
 
                         //「区分」を判定
@@ -960,10 +940,7 @@ namespace houkokuChecker
                         }
 
                         //行情報を取得
-                        string ykStk = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_DK_STK)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykStk = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_DK_STK)]).ToString("yyyy/MM/dd");
                         string ykKbn = dicSheet[createAdress(rowBase, C_IDX_DK_KBN)];
 
                         //「区分」を判定
@@ -1018,10 +995,7 @@ namespace houkokuChecker
                         }
 
                         //行情報を取得
-                        string ykStk = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykStk = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_YK_STK)]).ToString("yyyy/MM/dd");
                         string ykKbn = dicSheet[createAdress(rowBase, C_IDX_YK_KBN)];
 
                         //「区分」を判定
@@ -1076,10 +1050,7 @@ namespace houkokuChecker
                         }
 
                         //行情報を取得
-                        string ykStk = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykStk = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_YK_STK)]).ToString("yyyy/MM/dd");
                         string ykKbn = dicSheet[createAdress(rowBase, C_IDX_YK_KBN)];
 
                         //「区分」を判定
@@ -1136,10 +1107,7 @@ namespace houkokuChecker
                         }
 
                         //行情報を取得
-                        string ykStk = DateTime.ParseExact(
-                            dicSheet[createAdress(rowBase, C_IDX_YK_STK)],
-                            "yyyy/MM/dd H:mm:ss",
-                            CultureInfo.InvariantCulture).ToString("yyyy/MM/dd");
+                        string ykStk = DatetimeUtil.ToDate(dicSheet[createAdress(rowBase, C_IDX_YK_STK)]).ToString("yyyy/MM/dd");
                         string ykKbn = dicSheet[createAdress(rowBase, C_IDX_YK_KBN)];
 
                         //「区分」を判定
