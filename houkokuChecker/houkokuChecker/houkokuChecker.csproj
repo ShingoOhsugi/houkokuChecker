@@ -108,6 +108,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="box\CheckKekkaBox.cs" />
+    <Compile Include="box\SyukeiBox.cs" />
+    <Compile Include="box\ShinseiBox.cs" />
     <Compile Include="table\SinseiTable.cs">
       <SubType>Component</SubType>
     </Compile>
