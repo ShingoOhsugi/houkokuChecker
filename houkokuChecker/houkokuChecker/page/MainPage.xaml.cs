@@ -44,17 +44,19 @@ namespace houkokuChecker
         private const long C_IDX_FF_STK2 = 6;      //列No 振出・振休 取得日2
 
         //報告書
-        private const long R_IDX_TIME_KIHON = 15;        //行No 基本稼働時間
-        private const long R_IDX_TIME_MINASHI_H = 14;    //行No みなし補足時間
-        private const long R_IDX_TIME_MINASHI = 36;      //行No みなし稼働時間
-        private const long R_IDX_TIME_KOZYO_T = 21;      //行No 控除(遅刻)
-        private const long R_IDX_TIME_KOZYO_S = 26;      //行No 控除(早退)
-        private const long R_IDX_TIME_KOZYO_G = 31;      //行No 控除(外出)
-        private const long R_IDX_TIME_FUTUZAN = 40;      //行No 普通残業
-        private const long R_IDX_TIME_SINZAN = 44;       //行No 深夜残業
-        private const long R_IDX_TIME_SOUZAN = 48;       //行No 早朝残業
-        private const long R_IDX_TIME_HOTEIZAN = 52;     //行No 法定休日稼働
-        private const long R_IDX_TIME_HOTEISINZAN = 56;  //行No 法定休日深夜稼働
+        private const long R_IDX_TIME_KIHON = 17;        //行No 基本稼働時間
+        private const long R_IDX_TIME_MINASHI_H = 16;    //行No みなし補足時間
+        private const long R_IDX_TIME_MINASHI = 39;      //行No みなし稼働時間
+        private const long R_IDX_TIME_KOZYO_T = 24;      //行No 控除(遅刻)
+        private const long R_IDX_TIME_KOZYO_S = 29;      //行No 控除(早退)
+        private const long R_IDX_TIME_KOZYO_G = 34;      //行No 控除(外出)
+        private const long R_IDX_TIME_FUTUZAN = 51;      //行No 普通残業
+        private const long R_IDX_TIME_SINZAN = 55;       //行No 深夜残業
+        private const long R_IDX_TIME_SOUZAN = 47;       //行No 早朝残業
+        private const long R_IDX_TIME_HOTEIZAN = 63;     //行No 法定休日稼働
+        private const long R_IDX_TIME_HOTEISINZAN = 67;  //行No 法定休日深夜稼働
+        private const string R_IDX_SAGYOCD = "97,2";     //行列No PJコード
+        private const string R_IDX_SAGYONAIYO = "98,6";  //行列No PJ内容
 
         private const long C_IDX_HIDUKE_START = 21;      //列No 「1日」のセル
 
@@ -339,7 +341,7 @@ namespace houkokuChecker
             SyukeiTable locKekka = new SyukeiTable();
 
             //報告情報解析
-            Dictionary<string, string> dicHoukokuAlldata = dicHoukoku["社員"];
+            Dictionary<string, string> dicHoukokuAlldata = dicHoukoku["作業報告書"];
             TimeSpan totalKihon = new TimeSpan();
             TimeSpan totalMinasi = new TimeSpan();
             TimeSpan totalKojo = new TimeSpan();
@@ -457,7 +459,7 @@ namespace houkokuChecker
             drKekka["深夜残業"] = totalSNZan.TotalHours.ToString("0.00");
             drKekka["早朝稼働"] = totalSOZan.TotalHours.ToString("0.00");
             drKekka["法定休日稼働"] = totalKYZan.TotalHours.ToString("0.00");
-            drKekka["作業内容"] = dicHoukokuAlldata["80,2"] + " : " + dicHoukokuAlldata["81,6"];
+            drKekka["作業内容"] = dicHoukokuAlldata[R_IDX_SAGYOCD] + " : " + dicHoukokuAlldata[R_IDX_SAGYONAIYO];
             locKekka.Rows.Add(drKekka);
 
             return locKekka;
