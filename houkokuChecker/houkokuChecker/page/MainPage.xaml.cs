@@ -46,17 +46,17 @@ namespace houkokuChecker
         //報告書
         private const long R_IDX_TIME_KIHON = 17;        //行No 基本稼働時間
         private const long R_IDX_TIME_MINASHI_H = 16;    //行No みなし補足時間
-        private const long R_IDX_TIME_MINASHI = 39;      //行No みなし稼働時間
+        private const long R_IDX_TIME_MINASHI = 37;      //行No みなし稼働時間
         private const long R_IDX_TIME_KOZYO_T = 24;      //行No 控除(遅刻)
         private const long R_IDX_TIME_KOZYO_S = 29;      //行No 控除(早退)
         private const long R_IDX_TIME_KOZYO_G = 34;      //行No 控除(外出)
-        private const long R_IDX_TIME_FUTUZAN = 51;      //行No 普通残業
-        private const long R_IDX_TIME_SINZAN = 55;       //行No 深夜残業
-        private const long R_IDX_TIME_SOUZAN = 47;       //行No 早朝残業
-        private const long R_IDX_TIME_HOTEIZAN = 63;     //行No 法定休日稼働
-        private const long R_IDX_TIME_HOTEISINZAN = 67;  //行No 法定休日深夜稼働
-        private const string R_IDX_SAGYOCD = "97,2";     //行列No PJコード
-        private const string R_IDX_SAGYONAIYO = "98,6";  //行列No PJ内容
+        private const long R_IDX_TIME_FUTUZAN = 49;      //行No 普通残業
+        private const long R_IDX_TIME_SINZAN = 53;       //行No 深夜残業
+        private const long R_IDX_TIME_SOUZAN = 45;       //行No 早朝残業
+        private const long R_IDX_TIME_HOTEIZAN = 61;     //行No 法定休日稼働
+        private const long R_IDX_TIME_HOTEISINZAN = 57;  //行No 法定休日深夜稼働
+        private const string R_IDX_SAGYOCD = "95,2";     //行列No PJコード
+        private const string R_IDX_SAGYONAIYO = "96,6";  //行列No PJ内容
 
         private const long C_IDX_HIDUKE_START = 21;      //列No 「1日」のセル
 
